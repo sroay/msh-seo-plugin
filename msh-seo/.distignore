@@ -1,0 +1,11 @@
+# Files/dirs excluded from the distributable plugin zip (dev-only, not shipped)
+node_modules
+src
+package.json
+package-lock.json
+.distignore
+.gitignore
+webpack.config.js
+.eslintrc*
+tests
+*.map

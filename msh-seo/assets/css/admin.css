@@ -1,0 +1,235 @@
+/**
+ * MSH SEO Admin Styles
+ */
+
+.msh-settings-wrap {
+    max-width: 800px;
+}
+
+.msh-settings-wrap h1 {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+/* Connection Panel */
+.msh-panel {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin: 12px 0 20px;
+}
+
+/* Status badges */
+.msh-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.msh-status__dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.msh-status__dot--green {
+    background: #00a32a;
+    box-shadow: 0 0 0 3px rgba(0, 163, 42, 0.15);
+}
+
+.msh-status__dot--red {
+    background: #d63638;
+    box-shadow: 0 0 0 3px rgba(214, 54, 56, 0.15);
+}
+
+.msh-status--connected {
+    color: #1e1e1e;
+}
+
+.msh-status--disconnected {
+    color: #757575;
+}
+
+/* Org name */
+.msh-org-name {
+    color: #757575;
+    font-size: 13px;
+    margin: 0 0 8px;
+}
+
+/* Usage summary */
+.msh-usage-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    padding: 8px 12px;
+    background: #f6f7f7;
+    border-radius: 4px;
+    margin-bottom: 12px;
+}
+
+.msh-usage-summary strong {
+    color: #1e1e1e;
+}
+
+.msh-usage-summary span {
+    color: #757575;
+}
+
+/* API Key input area */
+#msh-api-key {
+    font-family: monospace;
+    letter-spacing: 0.5px;
+}
+
+#msh-verify-btn {
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+#msh-verify-spinner {
+    vertical-align: middle;
+}
+
+/* Settings form improvements */
+.msh-settings-wrap .form-table th {
+    width: 200px;
+    padding-top: 18px;
+}
+
+.msh-settings-wrap .form-table td {
+    padding-top: 14px;
+}
+
+.msh-settings-wrap select {
+    min-width: 200px;
+}
+
+/* Breadcrumbs (front-end, also output inline) */
+.msh-breadcrumbs {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 16px;
+}
+
+.msh-breadcrumbs a {
+    color: #0073aa;
+    text-decoration: none;
+}
+
+.msh-breadcrumbs a:hover {
+    text-decoration: underline;
+}
+
+.msh-breadcrumbs .separator {
+    margin: 0 8px;
+    color: #999;
+}
+
+.msh-breadcrumbs .current {
+    color: #333;
+    font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 782px) {
+    .msh-settings-wrap .form-table th {
+        width: auto;
+    }
+
+    .msh-usage-summary {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+}
+
+/* ── Modern console (v1.0) ─────────────────────────────────────────── */
+.msh-settings-wrap { max-width: 1120px; }
+.msh-settings-wrap > h1 { display: none; } /* replaced by the hero */
+
+.msh-hero {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; margin: 16px 0 20px; padding: 22px 26px;
+    background: linear-gradient(135deg, #ff5c8a, #ff9a3c);
+    border-radius: 16px; color: #fff;
+}
+.msh-hero__brand { display: flex; align-items: center; gap: 16px; }
+.msh-hero__logo {
+    width: 48px; height: 48px; border-radius: 12px;
+    background: rgba(255,255,255,.2); display: flex; align-items: center;
+    justify-content: center; font-weight: 800; font-size: 20px; letter-spacing: .5px;
+}
+.msh-hero__title { margin: 0; color: #fff; font-size: 24px; line-height: 1.1; }
+.msh-hero__tagline { margin: 2px 0 0; opacity: .92; font-size: 13px; }
+.msh-hero__version {
+    background: rgba(255,255,255,.22); padding: 4px 12px; border-radius: 9999px;
+    font-size: 12px; font-weight: 600;
+}
+
+.msh-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px; margin-bottom: 28px;
+}
+.msh-card {
+    background: #fff; border: 1px solid #e2e4e7; border-radius: 14px;
+    padding: 18px 20px; box-shadow: 0 1px 2px rgba(0,0,0,.03);
+}
+.msh-card__title {
+    margin: 0 0 12px; font-size: 15px; font-weight: 700; color: #1e1e1e;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.msh-card__badge { font-size: 11px; font-weight: 500; color: #757575; }
+.msh-card__hint { color: #757575; font-size: 13px; margin: 8px 0 0; }
+.msh-card__sub { color: #50575e; font-size: 12px; margin: 8px 0 6px; font-weight: 600; }
+
+.msh-feature-list { margin: 0; }
+.msh-feature-list li {
+    display: grid; grid-template-columns: 14px 1fr; grid-template-rows: auto auto;
+    column-gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px solid #f0f0f1;
+}
+.msh-feature-list li:last-child { border-bottom: 0; }
+.msh-feature-list__name { font-weight: 600; font-size: 13px; color: #1e1e1e; }
+.msh-feature-list__desc { grid-column: 2; font-size: 12px; color: #757575; }
+
+.msh-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.msh-dot--on { background: #00a32a; box-shadow: 0 0 0 3px rgba(0,163,42,.15); }
+.msh-dot--off { background: #c3c4c7; }
+
+.msh-metric { display: flex; flex-direction: column; gap: 2px; margin: 6px 0 12px; }
+.msh-metric__value {
+    font-size: 34px; font-weight: 800; line-height: 1;
+    background: linear-gradient(135deg, #ff5c8a, #ff9a3c);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.msh-metric__label { font-size: 12px; color: #757575; }
+
+.msh-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.msh-chip {
+    display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 9999px;
+    background: #f0f0f1; color: #50575e; font-weight: 500;
+}
+.msh-chip--on { background: #d3f9d8; color: #2b8a3e; }
+
+.msh-log { margin: 0; }
+.msh-log li {
+    display: grid; grid-template-columns: 12px 1fr auto; gap: 8px; align-items: center;
+    padding: 5px 0; font-size: 12px;
+}
+.msh-log__url { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #1e1e1e; }
+.msh-log__time { color: #a7aaad; font-size: 11px; }
+
+.msh-section-heading { margin: 8px 0 4px; font-size: 18px; }
+.msh-btn-secondary { border-radius: 8px !important; }
+
+@media screen and (max-width: 782px) {
+    .msh-hero { flex-direction: column; align-items: flex-start; }
+}

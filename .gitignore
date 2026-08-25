@@ -1,0 +1,9 @@
+# Dev-only. The plugin ships from create-zip.js, which excludes these too.
+node_modules/
+msh-seo/node_modules/
+msh-seo/src/
+package-lock.json
+
+# Built artefacts. The distributable is dashboard/public/msh-seo-plugin.zip,
+# which lives in the dashboard repo — these are local build leftovers.
+*.zip
