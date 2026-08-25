@@ -110,15 +110,48 @@ No data is sent unless you explicitly connect your MSH account and trigger an AI
 
 = Do I need a Marketing So High account? =
 
-No. All local SEO analysis features work without an account. An account is only needed for AI-powered features like content analysis and meta generation.
+No. Every local SEO feature works without one, and the plugin contacts nothing until you connect. An account is only needed for the two AI features.
 
 = Is there a free plan? =
 
-Yes. Marketing So High offers a free Starter plan with AI calls included each month.
+Yes. The free plan includes 50 AI operations a month. Once those are used the AI features pause until the next month; nothing else stops working.
 
 = Does this conflict with other SEO plugins? =
 
-MSH SEO outputs standard meta tags. If you use another SEO plugin, use the Import feature (MSH SEO > Import SEO) to migrate your data, then deactivate the old plugin.
+No. If Yoast SEO, Rank Math, All in One SEO, SEOPress, The SEO Framework or Slim SEO is active, MSH SEO detects it and automatically steps back from meta tags, schema and sitemaps so you never get duplicates. You will see a notice telling you this has happened.
+
+Everything that does not overlap keeps running: redirects, the 404 log and its automatic repair, the health checks and the AI tools. That means you can run MSH SEO alongside your existing SEO plugin purely for the broken-link repair, which is the thing no other free plugin does.
+
+If you would rather switch over completely, use MSH SEO > Import SEO to bring your titles and descriptions across from Yoast or Rank Math, then deactivate the old plugin. MSH SEO takes over the head output automatically once it is gone.
+
+= Which features are free, and which need an account? =
+
+Free forever, no account, nothing sent anywhere:
+
+* Meta titles and descriptions, Open Graph and Twitter cards
+* Schema markup and breadcrumbs
+* XML sitemaps
+* Redirects, the 404 log, and automatic repair of broken links
+* Health checks under Tools > Site Health
+
+Needs a free Marketing So High account (50 AI operations a month):
+
+* AI-generated meta titles and descriptions
+* AI page analysis
+
+Nothing is sent to Marketing So High until you enter an API key. See the External services section below for exactly what is sent and when.
+
+= How do I check whether the plugin is working? =
+
+Go to Tools > Site Health. MSH SEO adds checks there for its connection, its redirect engine and any plugin conflicts. The Info tab has an MSH SEO section with everything a support request would need — please paste it if you report a problem.
+
+= The plugin's scheduled tasks do not seem to run =
+
+WordPress only runs scheduled tasks when someone visits the site, so a site with very little traffic can go a long time without them firing. This is a WordPress behaviour rather than a plugin fault. Your host may offer a real system cron, which is more reliable.
+
+= How do I remove it completely? =
+
+Deactivate and delete the plugin in the usual way. To also remove its data, drop the tables ending in msh_redirects and msh_404_log, and delete the options beginning msh_.
 
 = What is IndexNow? =
 
@@ -196,6 +229,8 @@ Privacy Policy: https://policies.google.com/privacy
 == Changelog ==
 
 = 1.1.0 =
+* New: MSH SEO now detects Yoast SEO, Rank Math, All in One SEO, SEOPress, The SEO Framework and Slim SEO, and automatically stops writing meta tags, schema and sitemaps when one of them is active. No more duplicate tags. Redirects, broken-link repair, health checks and the AI tools keep working alongside them.
+* New: checks in Tools > Site Health for the connection, the redirect engine and plugin conflicts, plus an MSH SEO section in the Info tab with everything needed to diagnose a problem.
 * New: the plugin now reports its own health to Marketing So High once a day, and checks what it reports rather than assuming it. It verifies the redirect table by asking the database, and fetches your sitemap and llms.txt to confirm they really answer.
 * New: broken links repair themselves. Dead URLs that clearly point at one of your published posts get a permanent redirect automatically. Every rule it writes is tagged, so they can all be undone as a set, and a rule you wrote by hand is never touched or overwritten.
 * New: checks that pages you have published can actually be opened by a visitor. A page can be live in WordPress and still return "not found" to the public after a theme, permalink or hosting change, and nothing else notices.

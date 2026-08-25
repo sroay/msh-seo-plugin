@@ -47,6 +47,8 @@ require_once MSH_SEO_DIR . 'includes/class-msh-link-mesh.php';
 require_once MSH_SEO_DIR . 'includes/class-msh-conversion.php';
 require_once MSH_SEO_DIR . 'includes/class-msh-answer.php';
 require_once MSH_SEO_DIR . 'includes/class-msh-beacon.php';
+require_once MSH_SEO_DIR . 'includes/class-msh-conflicts.php';
+require_once MSH_SEO_DIR . 'includes/class-msh-site-health.php';
 
 /**
  * Activation hook: flush rewrite rules.
@@ -265,7 +267,32 @@ add_action( 'enqueue_block_editor_assets', 'msh_seo_enqueue_block_editor_assets'
  * Initialize meta tags (canonical removal, Divi conflict handling, and meta output).
  * All handled inside MSH_Meta_Tags::init().
  */
-MSH_Meta_Tags::init();
+/*
+ * Head output is decided on `plugins_loaded`, NOT here.
+ *
+ * Plugins load in roughly alphabetical order, so msh-seo is loaded before
+ * wordpress-seo — and at this point in the file WPSEO_VERSION does not exist
+ * yet. Checking now finds no conflict on a site that plainly has one, which is
+ * exactly what happened the first time this was tested against a real Yoast
+ * install. `plugins_loaded` is the earliest moment every plugin is present, and
+ * still long before wp_head fires.
+ */
+add_action( 'plugins_loaded', 'msh_seo_init_head_output' );
+function msh_seo_init_head_output() {
+	// Two plugins both writing titles, descriptions, Open Graph tags and
+	// canonicals gives every page two of each. That measurably worsens the
+	// user's search results and reads to them as this plugin breaking their
+	// site. Whoever was there first keeps the output.
+	if ( ! MSH_Conflicts::should_output() ) {
+		return;
+	}
+	MSH_Meta_Tags::init();
+	// Replaces the core sitemap, so two SEO plugins would mean two competing
+	// sitemap indexes.
+	MSH_Sitemap::init();
+	// Breadcrumb JSON-LD duplicates too.
+	MSH_Breadcrumbs::init();
+}
 
 /**
  * Output JSON-LD schema markup in wp_head.
@@ -276,7 +303,7 @@ add_action( 'wp_head', array( 'MSH_Schema', 'output_schema' ), 2 );
  * Initialize sitemap functionality.
  * Called directly (not via init hook) so the early priority-1 URI interceptor works.
  */
-MSH_Sitemap::init();
+
 
 // Disable WordPress core sitemaps (MSH SEO serves its own)
 add_filter( 'wp_sitemaps_enabled', '__return_false' );
@@ -304,7 +331,7 @@ add_action('plugins_loaded', function() {
 MSH_Image_SEO::init();
 
 // Breadcrumbs shortcode
-MSH_Breadcrumbs::init();
+
 
 // Instant Indexing (IndexNow)
 MSH_Indexing::init();
@@ -334,6 +361,12 @@ MSH_Analytics::init();
 // Without it a subsystem can be dead for a year while the site looks fine
 // from outside, which is exactly what the redirect engine did.
 MSH_Beacon::init();
+
+// These two always run, conflict or not. The conflict notice is the only thing
+// telling the user why their meta tags did not change, and Site Health is where
+// they will look before they open a support thread.
+MSH_Conflicts::init();
+MSH_Site_Health::init();
 
 /**
  * Register post meta fields.
