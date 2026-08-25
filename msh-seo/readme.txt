@@ -2,7 +2,7 @@
 Contributors: marketingsohigh
 Tags: seo, ai seo, schema markup, sitemap, content optimization
 Requires at least: 6.0
-Tested up to: 6.7
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 1.1.0
 License: GPLv2 or later
@@ -141,6 +141,57 @@ Answer Engine Optimization helps your content get cited by AI search engines lik
 5. Redirect manager with 404 logging
 6. WooCommerce product SEO fields
 7. WordPress dashboard SEO overview widget
+
+== External services ==
+
+This plugin connects to three external services. Nothing is sent anywhere until you explicitly
+connect the plugin by entering an API key, with the single exception of the search engine sitemap
+ping described below.
+
+**1. Marketing So High (app.marketingsohigh.com)**
+
+The plugin's AI features are provided by Marketing So High. Data is only ever sent once you have
+entered an API key under MSH SEO > Settings > Connection. Without a key the plugin runs its local
+SEO features and contacts nothing.
+
+What is sent, and when:
+
+* Daily health report: your site URL, the plugin/WordPress/PHP versions, whether each feature is
+  working, the number of redirect rules you have, and the URLs in your 404 log with their hit
+  counts. Also the URLs and titles of your published posts and pages, so the service can work out
+  where a broken link should point.
+* Weekly content report: for each published post, its title, URL, slug, publish and modified dates,
+  word count and a count of its headings, links and images.
+* When you use an AI feature: the content of the post you are working on, so it can be analysed or
+  a meta title and description generated for it.
+* Conversion events, if you enable the call-to-action feature: which CTA was shown and clicked, and
+  on which page.
+
+No visitor personal data, comment content, user accounts, email addresses or passwords are ever
+sent.
+
+Service: https://marketingsohigh.com
+Terms of Service: https://marketingsohigh.com/terms
+Privacy Policy: https://marketingsohigh.com/privacy
+
+**2. Google sitemap ping (www.google.com)**
+
+When you publish or update a post, the plugin notifies Google that your sitemap has changed, by
+requesting https://www.google.com/ping?sitemap=YOUR_SITEMAP_URL. The only data sent is your own
+sitemap URL. This happens whether or not you have connected an API key, and can be turned off under
+MSH SEO > Settings.
+
+Terms of Service: https://policies.google.com/terms
+Privacy Policy: https://policies.google.com/privacy
+
+**3. Google Indexing API (oauth2.googleapis.com, indexing.googleapis.com)**
+
+Optional, and off unless you supply your own Google service account credentials. When enabled, the
+plugin asks Google to index or re-index a specific URL on your site. Only the URL is sent, together
+with your own credentials to authenticate the request.
+
+Terms of Service: https://policies.google.com/terms
+Privacy Policy: https://policies.google.com/privacy
 
 == Changelog ==
 

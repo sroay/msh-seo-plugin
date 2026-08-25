@@ -51,6 +51,19 @@ require_once MSH_SEO_DIR . 'includes/class-msh-beacon.php';
 /**
  * Activation hook: flush rewrite rules.
  */
+/**
+ * Load translations.
+ *
+ * WordPress.org-hosted plugins get their translations loaded automatically
+ * since WP 4.6, so this changes nothing there. It matters for anyone who
+ * installs the plugin by hand or ships their own language pack, which is
+ * otherwise silently untranslated despite 300+ strings being ready for it.
+ */
+function msh_seo_load_textdomain() {
+	load_plugin_textdomain( 'msh-seo', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+}
+add_action( 'init', 'msh_seo_load_textdomain' );
+
 function msh_seo_activate() {
     MSH_Redirects::create_tables();
     flush_rewrite_rules();
