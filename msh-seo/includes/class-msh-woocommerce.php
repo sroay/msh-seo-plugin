@@ -39,7 +39,19 @@ class MSH_WooCommerce {
         add_action( 'woocommerce_process_product_meta', array( __CLASS__, 'save_product_data_fields' ) );
 
         // Output our own Product JSON-LD on single product pages.
-        add_action( 'wp_head', array( __CLASS__, 'output_product_schema' ), 3 );
+        // Only emit our own Product JSON-LD when no other SEO plugin is already
+        // doing it. Yoast and Rank Math both output Product schema on
+        // WooCommerce pages, and two competing blocks on one product page can
+        // cost the store its rich results entirely — a worse outcome than the
+        // duplicate meta tags, because the shop loses price and rating
+        // snippets in search.
+        //
+        // The other three hooks stay regardless: filter_product_schema refines
+        // WooCommerce's OWN output rather than adding a second block, and the
+        // GTIN/MPN/Brand fields are data entry, not page output.
+        if ( ! class_exists( 'MSH_Conflicts' ) || MSH_Conflicts::should_output() ) {
+            add_action( 'wp_head', array( __CLASS__, 'output_product_schema' ), 3 );
+        }
     }
 
     /**

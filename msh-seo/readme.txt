@@ -229,7 +229,7 @@ Privacy Policy: https://policies.google.com/privacy
 == Changelog ==
 
 = 1.1.0 =
-* New: MSH SEO now detects Yoast SEO, Rank Math, All in One SEO, SEOPress, The SEO Framework and Slim SEO, and automatically stops writing meta tags, schema and sitemaps when one of them is active. No more duplicate tags. Redirects, broken-link repair, health checks and the AI tools keep working alongside them.
+* New: MSH SEO now detects Yoast SEO, Rank Math, All in One SEO, SEOPress, The SEO Framework and Slim SEO, and automatically stops writing meta tags, schema and sitemaps when one of them is active. No more duplicate tags. On WooCommerce stores it also stops emitting its own Product schema, since two competing product schemas can cost a shop its price and rating snippets in search. Redirects, broken-link repair, health checks and the AI tools keep working alongside them.
 * New: checks in Tools > Site Health for the connection, the redirect engine and plugin conflicts, plus an MSH SEO section in the Info tab with everything needed to diagnose a problem.
 * New: the plugin now reports its own health to Marketing So High once a day, and checks what it reports rather than assuming it. It verifies the redirect table by asking the database, and fetches your sitemap and llms.txt to confirm they really answer.
 * New: broken links repair themselves. Dead URLs that clearly point at one of your published posts get a permanent redirect automatically. Every rule it writes is tagged, so they can all be undone as a set, and a rule you wrote by hand is never touched or overwritten.
