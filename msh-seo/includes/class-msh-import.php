@@ -128,7 +128,7 @@ class MSH_Import {
         <?php
         // Handle form submission.
         if ( isset( $_POST['msh_import_submit'] ) && check_admin_referer( 'msh_import_nonce' ) ) {
-            $slug   = sanitize_text_field( $_POST['msh_import_plugin'] ?? '' );
+            $slug   = sanitize_text_field( wp_unslash( $_POST['msh_import_plugin'] ?? '' ) );
             $result = self::import_from( $slug );
 
             if ( is_wp_error( $result ) ) {

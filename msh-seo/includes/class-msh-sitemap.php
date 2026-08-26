@@ -55,7 +55,7 @@ class MSH_Sitemap {
             return;
         }
 
-        $request_uri = trim( $_SERVER['REQUEST_URI'], '/' );
+        $request_uri = trim( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ), '/' );
         // Remove query string.
         $request_uri = strtok( $request_uri, '?' );
 

@@ -458,12 +458,12 @@ class MSH_Autopilot {
             wp_send_json_error( array( 'message' => 'Permission denied.' ) );
         }
 
-        $default_mode = sanitize_text_field( $_POST['default_mode'] ?? 'approval' );
+        $default_mode = sanitize_text_field( wp_unslash( $_POST['default_mode'] ?? 'approval' ) );
         if ( ! in_array( $default_mode, array( 'full', 'approval', 'off' ), true ) ) {
             $default_mode = 'approval';
         }
 
-        $scan_frequency = sanitize_text_field( $_POST['scan_frequency'] ?? 'weekly' );
+        $scan_frequency = sanitize_text_field( wp_unslash( $_POST['scan_frequency'] ?? 'weekly' ) );
         if ( ! in_array( $scan_frequency, array( 'daily', 'weekly', 'biweekly' ), true ) ) {
             $scan_frequency = 'weekly';
         }

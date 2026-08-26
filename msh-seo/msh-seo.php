@@ -9,7 +9,7 @@
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: msh-seo
- * Requires at least: 6.0
+ * Requires at least: 6.5
  * Requires PHP: 7.4
  */
 

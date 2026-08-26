@@ -331,20 +331,19 @@ class MSH_Analytics {
         global $wpdb;
         $table = $wpdb->prefix . 'msh_redirects';
 
-        // Create table if it doesn't exist (handles fresh installs and ZIP upgrades).
-        $charset_collate = $wpdb->get_charset_collate();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $wpdb->query( "CREATE TABLE IF NOT EXISTS {$table} (
-            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            source_url VARCHAR(500) NOT NULL,
-            target_url VARCHAR(500) NOT NULL,
-            redirect_type INT(3) NOT NULL DEFAULT 301,
-            hits BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            UNIQUE KEY source_url (source_url(191))
-        ) {$charset_collate}" );
+        // Delegate to the ONE place that owns this schema.
+        //
+        // This used to carry its own CREATE TABLE, which had drifted: it was
+        // missing the `note` column that the automatic broken-link repair
+        // writes and that revert_auto_redirects() deletes on. On a fresh
+        // install where a user added a redirect from the 404 log before the
+        // schema check had run, this path would win the race and build the
+        // table WITHOUT that column — after which every auto-repair insert
+        // failed and the revert matched nothing.
+        //
+        // Two code paths creating one table with different schemas is exactly
+        // what left the redirect engine dead for a year. One owner now.
+        MSH_Redirects::ensure_schema();
 
         $wpdb->replace(
             $table,

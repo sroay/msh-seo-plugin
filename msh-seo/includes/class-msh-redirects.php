@@ -151,7 +151,7 @@ class MSH_Redirects {
         }
         global $wpdb;
         $table   = $wpdb->prefix . 'msh_redirects';
-        $request = esc_url_raw( $_SERVER['REQUEST_URI'] ?? '' );
+        $request = esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) );
         if ( empty( $request ) ) return;
 
         $path  = (string) wp_parse_url( $request, PHP_URL_PATH );
@@ -236,8 +236,8 @@ class MSH_Redirects {
 
         if ( is_404() ) {
             $log_table = $wpdb->prefix . 'msh_404_log';
-            $referrer  = esc_url_raw( $_SERVER['HTTP_REFERER'] ?? '' );
-            $ua        = sanitize_text_field( $_SERVER['HTTP_USER_AGENT'] ?? '' );
+            $referrer  = esc_url_raw( wp_unslash( $_SERVER['HTTP_REFERER'] ?? '' ) );
+            $ua        = sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? '' ) );
 
             // Log the PATH. Keyed on the full URI, a single dead link becomes
             // a separate row per campaign parameter, and the ranking by hits
@@ -264,10 +264,13 @@ class MSH_Redirects {
         global $wpdb;
 
         if ( isset( $_POST['msh_redirect_action'] ) && check_admin_referer( 'msh_redirects_nonce' ) ) {
-            $action = sanitize_text_field( $_POST['msh_redirect_action'] );
+            // Unslash BEFORE sanitising. WordPress adds slashes to every
+            // superglobal, so sanitising first leaves the escapes baked into
+            // the stored value — a URL with an apostrophe comes back wrong.
+            $action = sanitize_text_field( wp_unslash( $_POST['msh_redirect_action'] ) );
             if ( 'add' === $action ) {
-                $source = sanitize_text_field( $_POST['source_url'] ?? '' );
-                $target = esc_url_raw( $_POST['target_url'] ?? '' );
+                $source = sanitize_text_field( wp_unslash( $_POST['source_url'] ?? '' ) );
+                $target = esc_url_raw( wp_unslash( $_POST['target_url'] ?? '' ) );
                 $type   = in_array( (int) ( $_POST['redirect_type'] ?? 301 ), array( 301, 302 ), true ) ? (int) $_POST['redirect_type'] : 301;
                 if ( $source && $target ) {
                     $wpdb->replace( $wpdb->prefix . 'msh_redirects', array(

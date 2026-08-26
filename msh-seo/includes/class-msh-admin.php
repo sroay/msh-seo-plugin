@@ -601,7 +601,7 @@ class MSH_Admin {
             wp_send_json_error( array( 'message' => __( 'Permission denied.', 'msh-seo' ) ) );
         }
 
-        $api_key = sanitize_text_field( $_POST['api_key'] ?? '' );
+        $api_key = sanitize_text_field( wp_unslash( $_POST['api_key'] ?? '' ) );
 
         if ( empty( $api_key ) ) {
             wp_send_json_error( array( 'message' => __( 'Please enter an API key.', 'msh-seo' ) ) );

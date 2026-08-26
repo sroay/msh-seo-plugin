@@ -132,7 +132,13 @@ class MSH_Distribution {
         }
 
         $post_id  = absint( $_POST['post_id'] ?? 0 );
-        $channels = json_decode( stripslashes( $_POST['channels'] ?? '[]' ), true );
+        // wp_unslash, not stripslashes: WordPress slashes every superglobal on
+        // the way in, and its own helper is the one that reverses exactly that.
+        // Each decoded channel is then constrained to a key, so nothing
+        // arbitrary reaches the API from a form field.
+        $raw_channels = isset( $_POST['channels'] ) ? wp_unslash( $_POST['channels'] ) : '[]';
+        $channels     = json_decode( is_string( $raw_channels ) ? $raw_channels : '[]', true );
+        $channels     = is_array( $channels ) ? array_values( array_filter( array_map( 'sanitize_key', $channels ) ) ) : array();
 
         if ( ! $post_id || ! is_array( $channels ) || empty( $channels ) ) {
             wp_send_json_error( __( 'Invalid request.', 'msh-seo' ) );
