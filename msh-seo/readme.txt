@@ -4,7 +4,7 @@ Tags: seo, ai seo, schema markup, sitemap, content optimization
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -227,6 +227,9 @@ Terms of Service: https://policies.google.com/terms
 Privacy Policy: https://policies.google.com/privacy
 
 == Changelog ==
+
+= 1.1.3 =
+* Improved: the broken-link report now shows when each link was last followed, not just how many times it has ever been followed. A page that was hit heavily last month and not once since used to look exactly like one being hit today, which pushed problems you had already fixed to the top of the list.
 
 = 1.1.2 =
 * Fixed: the broken-link report was counting the plugin's own daily check as visitor traffic. Each night it re-tests your dead URLs to see whether any have come back, and every one of those tests was being recorded as somebody hitting the page. Because the report is ordered by hit count, and the pages it re-tests are taken from the top of that order, a handful of URLs climbed the list on their own and stayed there. Those counts now reflect real visitors only.

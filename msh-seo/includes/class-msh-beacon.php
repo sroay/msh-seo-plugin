@@ -528,7 +528,7 @@ class MSH_Beacon {
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- names from $wpdb->prefix
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT l.url, l.hits, l.referrer, l.user_agent
+				"SELECT l.url, l.hits, l.referrer, l.user_agent, l.last_hit
 				   FROM {$log} l
 				   LEFT JOIN {$redirects} r ON r.source_url = l.url
 				  WHERE r.id IS NULL AND l.last_hit >= %s
@@ -553,6 +553,12 @@ class MSH_Beacon {
 					// and "leave it 404ing".
 					'referrer' => self::clean_referrer( $r['referrer'] ),
 					'agent'    => self::clean_agent( $r['user_agent'] ),
+					// WHEN it was last asked for. `hits` is a lifetime total
+					// filtered only by this field, so without it a URL hit 122
+					// times last month and never since is indistinguishable
+					// from one being hit right now -- and the queue is ordered
+					// by that number.
+					'last_hit' => $r['last_hit'] ? gmdate( 'c', strtotime( $r['last_hit'] ) ) : null,
 				);
 			},
 			$rows ? $rows : array()
