@@ -4,7 +4,7 @@ Tags: seo, ai seo, schema markup, sitemap, content optimization
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -227,6 +227,10 @@ Terms of Service: https://policies.google.com/terms
 Privacy Policy: https://policies.google.com/privacy
 
 == Changelog ==
+
+= 1.1.1 =
+* Improved: the broken-link report now says where each broken link was clicked from and whether it was a person or a bot. That is the difference between "someone linked to this from your own menu" and "a scanner is probing for a page you never had" — the first is worth fixing, the second is worth ignoring, and until now they looked identical.
+* Privacy: referrers are trimmed to the page address only, with any query string dropped before it leaves your server, and browsers are recorded by family (Chrome, Safari) rather than the full identifying string.
 
 = 1.1.0 =
 * New: MSH SEO now detects Yoast SEO, Rank Math, All in One SEO, SEOPress, The SEO Framework and Slim SEO, and automatically stops writing meta tags, schema and sitemaps when one of them is active. No more duplicate tags. On WooCommerce stores it also stops emitting its own Product schema, since two competing product schemas can cost a shop its price and rating snippets in search. Redirects, broken-link repair, health checks and the AI tools keep working alongside them.

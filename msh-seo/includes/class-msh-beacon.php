@@ -266,6 +266,63 @@ class MSH_Beacon {
 		);
 	}
 
+	/**
+	 * A referrer, with anything identifying removed.
+	 *
+	 * Only the origin and path are kept. A query string on a referring URL can
+	 * carry a session token, an email address or a reset link, and none of that
+	 * is needed to answer "where did this link come from" -- so it is dropped
+	 * here, on the customer's own server, rather than sent and filtered later.
+	 */
+	private static function clean_referrer( $raw ) {
+		$raw = trim( (string) $raw );
+		if ( '' === $raw ) {
+			return '';
+		}
+		$parts = wp_parse_url( $raw );
+		if ( empty( $parts['host'] ) ) {
+			return '';
+		}
+		$scheme = isset( $parts['scheme'] ) ? $parts['scheme'] : 'https';
+		$path   = isset( $parts['path'] ) ? $parts['path'] : '';
+		return substr( $scheme . '://' . $parts['host'] . $path, 0, 160 );
+	}
+
+	/**
+	 * A user agent, shortened to the part that identifies the CLIENT.
+	 *
+	 * The question is only ever "browser or bot". A full UA string is long,
+	 * highly identifying in combination with other fields, and adds nothing to
+	 * that answer, so a known bot reports its own name and everything else
+	 * collapses to the browser family.
+	 */
+	private static function clean_agent( $raw ) {
+		$raw = trim( (string) $raw );
+		if ( '' === $raw ) {
+			return '';
+		}
+		$bots = array(
+			'Googlebot', 'bingbot', 'GPTBot', 'ClaudeBot', 'PerplexityBot', 'CCBot',
+			'AhrefsBot', 'SemrushBot', 'DotBot', 'MJ12bot', 'YandexBot', 'Baiduspider',
+			'Applebot', 'facebookexternalhit', 'Bytespider', 'PetalBot', 'DataForSeoBot',
+		);
+		foreach ( $bots as $bot ) {
+			if ( false !== stripos( $raw, $bot ) ) {
+				return $bot;
+			}
+		}
+		// Anything self-describing as a library or crawler is not a reader.
+		if ( preg_match( '/(bot|crawler|spider|scrapy|curl|wget|python-requests|httpclient|okhttp|java\/)/i', $raw ) ) {
+			return 'other-bot';
+		}
+		foreach ( array( 'Edg' => 'Edge', 'OPR' => 'Opera', 'Chrome' => 'Chrome', 'Firefox' => 'Firefox', 'Safari' => 'Safari' ) as $needle => $name ) {
+			if ( false !== stripos( $raw, $needle ) ) {
+				return $name;
+			}
+		}
+		return 'other';
+	}
+
 	/** Published items probed per run. Small enough for shared hosting daily. */
 	const MAX_REACHABILITY_PROBES = 8;
 
@@ -471,7 +528,7 @@ class MSH_Beacon {
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- names from $wpdb->prefix
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT l.url, l.hits
+				"SELECT l.url, l.hits, l.referrer, l.user_agent
 				   FROM {$log} l
 				   LEFT JOIN {$redirects} r ON r.source_url = l.url
 				  WHERE r.id IS NULL AND l.last_hit >= %s
@@ -486,8 +543,16 @@ class MSH_Beacon {
 		return array_map(
 			static function ( $r ) {
 				return array(
-					'url'  => $r['url'],
-					'hits' => (int) $r['hits'],
+					'url'      => $r['url'],
+					'hits'     => (int) $r['hits'],
+					// Who asked. The log has recorded both since the first
+					// release and nothing ever forwarded them, so every
+					// escalated URL arrived with no way to tell a reader
+					// following a broken link from a scanner probing paths --
+					// which is the whole difference between "build this page"
+					// and "leave it 404ing".
+					'referrer' => self::clean_referrer( $r['referrer'] ),
+					'agent'    => self::clean_agent( $r['user_agent'] ),
 				);
 			},
 			$rows ? $rows : array()
