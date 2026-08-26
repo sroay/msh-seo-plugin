@@ -239,6 +239,24 @@ class MSH_Redirects {
             $referrer  = esc_url_raw( wp_unslash( $_SERVER['HTTP_REFERER'] ?? '' ) );
             $ua        = sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? '' ) );
 
+            // Never count our own probe.
+            //
+            // The daily beacon fetches each dead URL to see whether it has
+            // come back. Those requests 404 by definition -- that is what
+            // makes them worth probing -- and every one was landing here as a
+            // fresh hit on the very URL it was checking.
+            //
+            // The result was a loop that fed itself: the log ranks by hits,
+            // the probe list is drawn from the top of that ranking, so the
+            // same URLs gained a hit a day and stayed pinned at the top of
+            // the queue a person reads. Measured on believele.com, /jobs,
+            // /post-a-job and /mobile-app had accumulated 119, 125 and 93
+            // hits almost entirely this way, and read as the site's worst
+            // broken links when nobody had clicked them at all.
+            if ( false !== strpos( $ua, 'MSH-SEO-WP/' ) ) {
+                return;
+            }
+
             // Log the PATH. Keyed on the full URI, a single dead link becomes
             // a separate row per campaign parameter, and the ranking by hits
             // that makes this log actionable falls apart.

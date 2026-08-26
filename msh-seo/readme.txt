@@ -4,7 +4,7 @@ Tags: seo, ai seo, schema markup, sitemap, content optimization
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -227,6 +227,9 @@ Terms of Service: https://policies.google.com/terms
 Privacy Policy: https://policies.google.com/privacy
 
 == Changelog ==
+
+= 1.1.2 =
+* Fixed: the broken-link report was counting the plugin's own daily check as visitor traffic. Each night it re-tests your dead URLs to see whether any have come back, and every one of those tests was being recorded as somebody hitting the page. Because the report is ordered by hit count, and the pages it re-tests are taken from the top of that order, a handful of URLs climbed the list on their own and stayed there. Those counts now reflect real visitors only.
 
 = 1.1.1 =
 * Improved: the broken-link report now says where each broken link was clicked from and whether it was a person or a bot. That is the difference between "someone linked to this from your own menu" and "a scanner is probing for a page you never had" — the first is worth fixing, the second is worth ignoring, and until now they looked identical.
