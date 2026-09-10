@@ -230,7 +230,19 @@ class MSH_Redirects {
             }
 
             $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET hits = hits + 1 WHERE id = %d", $redirect->id ) );
-            wp_redirect( esc_url_raw( $target ), (int) $redirect->redirect_type );
+            // wp_redirect, not wp_safe_redirect, on purpose.
+            //
+            // wp_safe_redirect() refuses any host but this one, and sending an
+            // old URL to somewhere else is precisely what a redirect engine is
+            // for — a retired page pointing at a partner, a moved section on
+            // another domain. Restricting it here would silently drop rules the
+            // site owner deliberately created.
+            //
+            // The target is not attacker-controlled: it is a row in this
+            // plugin's own table, writable only by an administrator, and it is
+            // passed through esc_url_raw() on its way out. exit follows on the
+            // next line so nothing runs after the header.
+            wp_redirect( esc_url_raw( $target ), (int) $redirect->redirect_type ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- see above; admin-authored target, external destinations are the feature.
             exit;
         }
 
