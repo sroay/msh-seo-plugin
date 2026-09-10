@@ -247,6 +247,9 @@ class MSH_Beacon {
 			'wp_version'     => $wp_version,
 			'php_version'    => PHP_VERSION,
 			'site_url'       => home_url(),
+			// Which Google Analytics tag this site currently prints, so the
+			// dashboard can see delivery worked without crawling the page.
+			'tracking'       => MSH_Tracking::report(),
 			'subsystems'     => $subsystems,
 			'redirects'      => $redirects,
 			'cron'           => array(
@@ -719,6 +722,13 @@ class MSH_Beacon {
 		}
 
 		update_option( 'msh_beacon_last_run', current_time( 'c' ), false );
+
+		// The Google Analytics measurement id the dashboard wants on this site.
+		// Third delivery channel after the direct push and the /verify reply —
+		// the one that needs nothing but this daily round trip.
+		if ( isset( $body['analytics'] ) && is_array( $body['analytics'] ) ) {
+			MSH_Tracking::absorb( $body['analytics'] );
+		}
 
 		// Apply the repairs MSH worked out from the report we just sent. The
 		// round trip is the whole design: it needs no inbound connectivity, and

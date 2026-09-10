@@ -164,6 +164,63 @@ class MSH_Auth {
             update_option( 'msh_seo_google_site_verification', sanitize_text_field( $result['google_site_verification'] ) );
         }
 
+        // One-click Google Analytics: the same reply may carry the GA4
+        // measurement id, so the tag goes live even if the direct push never
+        // reached this site.
+        MSH_Tracking::absorb( $result );
+
+        // Bing Webmaster Tools ownership token, printed like the Google one.
+        // ChatGPT and Copilot answer from Bing's index; unverified there, a
+        // site cannot submit sitemaps or see what Bing thinks of it.
+        if ( isset( $result['bing_site_verification'] ) && is_string( $result['bing_site_verification'] ) && '' !== $result['bing_site_verification'] ) {
+            update_option( 'msh_seo_bing_site_verification', sanitize_text_field( $result['bing_site_verification'] ) );
+        }
+        // Where the newsletter form posts. Only delivered to sites whose
+        // organisation owns the newsletter; absent means no form.
+        if ( isset( $result['newsletter_endpoint'] ) && is_string( $result['newsletter_endpoint'] ) && 0 === strpos( $result['newsletter_endpoint'], 'https://' ) ) {
+            update_option( 'msh_seo_newsletter_endpoint', esc_url_raw( $result['newsletter_endpoint'] ) );
+        }
+
+        // Entity links for the schema (Organization.sameAs, the founder as
+        // author). Delivered by the dashboard from the brand's real profiles;
+        // never overwrites a list a person typed into the settings screen.
+        if ( isset( $result['entity'] ) && is_array( $result['entity'] ) ) {
+            $entity = $result['entity'];
+            if ( ! empty( $entity['same_as'] ) && is_array( $entity['same_as'] ) ) {
+                $urls = array();
+                foreach ( $entity['same_as'] as $u ) {
+                    $u = esc_url_raw( (string) $u );
+                    if ( $u && 0 === strpos( $u, 'https://' ) ) {
+                        $urls[] = $u;
+                    }
+                }
+                $current = get_option( 'msh_seo_social_profiles', '' );
+                $ours    = 'msh' === get_option( 'msh_seo_social_profiles_source', '' );
+                if ( ! empty( $urls ) && ( empty( $current ) || $ours ) ) {
+                    update_option( 'msh_seo_social_profiles', implode( "\n", $urls ) );
+                    update_option( 'msh_seo_social_profiles_source', 'msh' );
+                }
+            }
+            if ( ! empty( $entity['founder'] ) && is_array( $entity['founder'] ) && ! empty( $entity['founder']['name'] ) ) {
+                $f = $entity['founder'];
+                $founder_urls = array();
+                if ( ! empty( $f['same_as'] ) && is_array( $f['same_as'] ) ) {
+                    foreach ( $f['same_as'] as $u ) {
+                        $u = esc_url_raw( (string) $u );
+                        if ( $u && 0 === strpos( $u, 'https://' ) ) {
+                            $founder_urls[] = $u;
+                        }
+                    }
+                }
+                update_option( 'msh_seo_founder', array(
+                    'name'      => sanitize_text_field( (string) $f['name'] ),
+                    'job_title' => sanitize_text_field( (string) ( $f['job_title'] ?? '' ) ),
+                    'bio'       => sanitize_text_field( (string) ( $f['bio'] ?? '' ) ),
+                    'same_as'   => $founder_urls,
+                ) );
+            }
+        }
+
         return $result;
     }
 

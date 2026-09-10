@@ -4,7 +4,7 @@ Tags: seo, ai seo, schema markup, sitemap, content optimization
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.3
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -227,6 +227,18 @@ Terms of Service: https://policies.google.com/terms
 Privacy Policy: https://policies.google.com/privacy
 
 == Changelog ==
+
+= 1.4.0 =
+* New: an author box under every post with the founder's name, role, a one-line bio and profile links, delivered by the MSH dashboard. Readers and answer engines see who is speaking. Turn off with the msh_seo_author_box_enabled option.
+* New: a newsletter signup form under every post that posts to the MSH newsletter's double-opt-in endpoint. Only appears on sites whose organisation owns a newsletter. Turn off with the msh_seo_newsletter_enabled option.
+* New: Bing Webmaster Tools verification tag, delivered from the dashboard like the Google one.
+
+= 1.3.0 =
+* Improved: the schema now says who you are. Your brand's profile links (LinkedIn, X, GitHub and the like) are printed as sameAs on the Organization, on every article's publisher and, when MSH knows the founder, on the author with a job title and profile links. Answer engines use exactly these signals to decide who is speaking. Links arrive from the MSH dashboard and never overwrite a list you typed into the settings screen yourself.
+* Fixed: an SEO title set by MSH was still getting " – Site Name" appended, which pushed every one past the length Google shows. A SEO title now stands on its own.
+
+= 1.2.0 =
+* New: one-click Google Analytics. When your site is connected to MSH and your Google account is linked there, MSH reads the GA4 property's measurement id and places the standard Google tag on the site for you — then checks the live page to confirm it is really there. Until now MSH could map a property to a site but nothing put the tag on the page, so a property could sit "connected" for months without recording a single visit. The id arrives by direct push, with the hourly connection check, or with the daily check-in, so a reinstall or an offline moment cannot lose it. The tag is not added to a site that already carries a Google tag of its own.
 
 = 1.1.3 =
 * Improved: the broken-link report now shows when each link was last followed, not just how many times it has ever been followed. A page that was hit heavily last month and not once since used to look exactly like one being hit today, which pushed problems you had already fixed to the top of the list.

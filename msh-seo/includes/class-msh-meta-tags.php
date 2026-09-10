@@ -52,6 +52,10 @@ class MSH_Meta_Tags {
         if ( ! empty( $google_verification ) ) {
             printf( '<meta name="google-site-verification" content="%s" />' . "\n", esc_attr( $google_verification ) );
         }
+        $bing_verification = get_option( 'msh_seo_bing_site_verification', '' );
+        if ( ! empty( $bing_verification ) ) {
+            printf( '<meta name="msvalidate.01" content="%s" />' . "\n", esc_attr( $bing_verification ) );
+        }
 
         if ( ! get_option( 'msh_seo_enable_meta', true ) ) {
             return;
@@ -548,7 +552,9 @@ class MSH_Meta_Tags {
 
         $seo_title = get_post_meta( $post->ID, '_msh_seo_title', true );
         if ( ! empty( $seo_title ) ) {
-            $title_parts['title'] = $seo_title;
+            // A SERP title is written to fit Google's ~60 characters on its
+            // own. Appending " – Site Name" pushed every one past the cut.
+            return array( 'title' => $seo_title );
         }
 
         return $title_parts;

@@ -173,12 +173,22 @@ class MSH_Schema {
             ),
             'publisher'     => array(
                 '@type' => 'Organization',
+                '@id'   => esc_url( home_url( '/' ) ) . '#organization',
                 'name'  => esc_html( get_bloginfo( 'name' ) ),
                 'url'   => esc_url( home_url( '/' ) ),
             ),
         );
 
-        // Author.
+        // The same profile links as the site-wide Organization, so the
+        // publisher of every article is the same entity answer engines see.
+        $publisher_same_as = self::social_profile_urls();
+        if ( ! empty( $publisher_same_as ) ) {
+            $schema['publisher']['sameAs'] = $publisher_same_as;
+        }
+
+        // Author. On a founder-run site the author IS the founder: give the
+        // Person a job title and profile links, the signals answer engines use
+        // to decide who is speaking.
         $author = get_userdata( $post->post_author );
         if ( $author ) {
             $schema['author'] = array(
@@ -186,6 +196,17 @@ class MSH_Schema {
                 'name'  => esc_html( $author->display_name ),
                 'url'   => esc_url( get_author_posts_url( $author->ID ) ),
             );
+            $founder = get_option( 'msh_seo_founder', array() );
+            if ( is_array( $founder ) && ! empty( $founder['name'] ) ) {
+                $schema['author']['name'] = esc_html( $founder['name'] );
+                if ( ! empty( $founder['job_title'] ) ) {
+                    $schema['author']['jobTitle'] = esc_html( $founder['job_title'] );
+                }
+                if ( ! empty( $founder['same_as'] ) && is_array( $founder['same_as'] ) ) {
+                    $schema['author']['sameAs'] = array_values( array_map( 'esc_url_raw', $founder['same_as'] ) );
+                }
+                $schema['author']['worksFor'] = array( '@id' => esc_url( home_url( '/' ) ) . '#organization' );
+            }
         }
 
         // Featured image.
@@ -414,6 +435,29 @@ class MSH_Schema {
             '@id'             => esc_url( home_url( add_query_arg( array() ) ) ) . '#breadcrumb',
             'itemListElement' => $items,
         );
+    }
+
+    /**
+     * The brand's profile URLs (LinkedIn, X, GitHub…) from the settings screen
+     * or the MSH dashboard — one list, used wherever the Organization appears.
+     *
+     * @return array<int,string>
+     */
+    private static function social_profile_urls() {
+        $profiles = get_option( 'msh_seo_social_profiles', array() );
+        if ( is_string( $profiles ) ) {
+            $profiles = array_filter( array_map( 'trim', preg_split( '/[\r\n,]+/', $profiles ) ) );
+        }
+        $same_as = array();
+        if ( ! empty( $profiles ) && is_array( $profiles ) ) {
+            foreach ( $profiles as $profile ) {
+                $u = esc_url_raw( $profile );
+                if ( $u ) {
+                    $same_as[] = $u;
+                }
+            }
+        }
+        return array_values( $same_as );
     }
 
     /**

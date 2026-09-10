@@ -3,7 +3,7 @@
  * Plugin Name: MSH SEO – AI-Powered SEO Tools
  * Plugin URI: https://marketingsohigh.com
  * Description: Free SEO tools for WordPress with AI-powered content optimization. Connects to Marketing So High for advanced AI features.
- * Version: 1.1.3
+ * Version: 1.4.0
  * Author: Marketing So High
  * Author URI: https://marketingsohigh.com
  * License: GPLv2 or later
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'MSH_SEO_VERSION', '1.1.3' );
+define( 'MSH_SEO_VERSION', '1.4.0' );
 define( 'MSH_SEO_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MSH_SEO_URL', plugin_dir_url( __FILE__ ) );
 
@@ -42,11 +42,14 @@ require_once MSH_SEO_DIR . 'includes/class-msh-aeo.php';
 require_once MSH_SEO_DIR . 'includes/class-msh-page-types.php';
 require_once MSH_SEO_DIR . 'includes/class-msh-crawlers.php';
 require_once MSH_SEO_DIR . 'includes/class-msh-freshness.php';
+require_once MSH_SEO_DIR . 'includes/class-msh-author-box.php';
+require_once MSH_SEO_DIR . 'includes/class-msh-newsletter.php';
 require_once MSH_SEO_DIR . 'includes/class-msh-autopilot.php';
 require_once MSH_SEO_DIR . 'includes/class-msh-link-mesh.php';
 require_once MSH_SEO_DIR . 'includes/class-msh-conversion.php';
 require_once MSH_SEO_DIR . 'includes/class-msh-answer.php';
 require_once MSH_SEO_DIR . 'includes/class-msh-beacon.php';
+require_once MSH_SEO_DIR . 'includes/class-msh-tracking.php';
 require_once MSH_SEO_DIR . 'includes/class-msh-conflicts.php';
 require_once MSH_SEO_DIR . 'includes/class-msh-site-health.php';
 
@@ -351,6 +354,10 @@ MSH_Crawlers::init();
 // Content freshness scanner (weekly cron)
 MSH_Freshness::init();
 
+// Author box + newsletter signup under every post (1.4.0)
+MSH_Author_Box::init();
+MSH_Newsletter::init();
+
 // SEO Autopilot — self-healing content engine (weekly cron + REST receiver)
 MSH_Autopilot::init();
 
@@ -361,6 +368,12 @@ MSH_Analytics::init();
 // Without it a subsystem can be dead for a year while the site looks fine
 // from outside, which is exactly what the redirect engine did.
 MSH_Beacon::init();
+
+// Google Analytics tag delivered by the MSH dashboard (direct push, /verify
+// reply, or beacon reply). Outside the SEO-plugin conflict gate on purpose:
+// another plugin owning the meta tags says nothing about whether Analytics
+// should run.
+MSH_Tracking::init();
 
 // These two always run, conflict or not. The conflict notice is the only thing
 // telling the user why their meta tags did not change, and Site Health is where
