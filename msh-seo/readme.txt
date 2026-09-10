@@ -177,9 +177,9 @@ Answer Engine Optimization helps your content get cited by AI search engines lik
 
 == External services ==
 
-This plugin connects to three external services. Nothing is sent anywhere until you explicitly
-connect the plugin by entering an API key, with the single exception of the search engine sitemap
-ping described below.
+This plugin connects to five external services. The AI features send nothing until you explicitly
+connect the plugin by entering an API key. Three things happen without a key and are described
+below: the search engine sitemap pings, the IndexNow submission, and the Google Analytics tag.
 
 **1. Marketing So High (app.marketingsohigh.com)**
 
@@ -199,23 +199,31 @@ What is sent, and when:
   a meta title and description generated for it.
 * Conversion events, if you enable the call-to-action feature: which CTA was shown and clicked, and
   on which page.
+* Newsletter signups, if a newsletter is configured for your site: a signup form appears under each
+  post and the visitor's email address is sent from their browser to the newsletter's double
+  opt-in endpoint, along with the page they signed up from. The visitor receives a confirmation
+  email and is not subscribed until they click it. No form appears, and no address is ever sent,
+  unless a newsletter endpoint has been delivered to your site.
 
-No visitor personal data, comment content, user accounts, email addresses or passwords are ever
-sent.
+Apart from newsletter signups the visitor entered themselves, no visitor personal data, comment
+content, user accounts, email addresses or passwords are ever sent.
 
 Service: https://marketingsohigh.com
 Terms of Service: https://marketingsohigh.com/terms
 Privacy Policy: https://marketingsohigh.com/privacy
 
-**2. Google sitemap ping (www.google.com)**
+**2. Search engine sitemap pings (www.google.com, www.bing.com)**
 
-When you publish or update a post, the plugin notifies Google that your sitemap has changed, by
-requesting https://www.google.com/ping?sitemap=YOUR_SITEMAP_URL. The only data sent is your own
-sitemap URL. This happens whether or not you have connected an API key, and can be turned off under
+When you publish or update a post, the plugin notifies Google and Bing that your sitemap has
+changed, by requesting https://www.google.com/ping?sitemap=YOUR_SITEMAP_URL and
+https://www.bing.com/ping?sitemap=YOUR_SITEMAP_URL. The only data sent is your own sitemap URL.
+This happens whether or not you have connected an API key, and can be turned off under
 MSH SEO > Settings.
 
 Terms of Service: https://policies.google.com/terms
 Privacy Policy: https://policies.google.com/privacy
+Bing Terms of Use: https://www.bing.com/new/termsofuse
+Microsoft Privacy Statement: https://privacy.microsoft.com/privacystatement
 
 **3. Google Indexing API (oauth2.googleapis.com, indexing.googleapis.com)**
 
@@ -225,6 +233,33 @@ with your own credentials to authenticate the request.
 
 Terms of Service: https://policies.google.com/terms
 Privacy Policy: https://policies.google.com/privacy
+
+**4. Google Analytics (www.googletagmanager.com)**
+
+Optional, and off until a Google Analytics measurement id (G-XXXXXXXXXX) is stored for your site.
+You can set one yourself, or let the connected Marketing So High dashboard install the id from your
+own Google Analytics property. Once an id is present, every front-end page loads Google's standard
+gtag.js script and your visitors' page views are reported to YOUR Google Analytics property.
+
+This is the same tag Google's own installer would add. It sends visitor data to Google under your
+Analytics account, so your site's privacy policy should say so, and any consent banner you run
+should cover it. Remove the measurement id under MSH SEO > Settings to stop the tag loading.
+
+Service: https://marketingplatform.google.com/about/analytics/
+Terms of Service: https://policies.google.com/terms
+Privacy Policy: https://policies.google.com/privacy
+
+**5. IndexNow (api.indexnow.org)**
+
+When you publish or update a post, the plugin submits that URL to IndexNow, the shared protocol
+Bing, Yandex, Seznam and Naver use to learn about new pages immediately instead of waiting for a
+crawl. Sent: your site's hostname, the URL or URLs that changed, and a key the plugin generates for
+your site and serves at yoursite.com/KEY.txt so the search engines can confirm the submission came
+from you. No account and no API key are needed, so this works on a fresh install; turn it off under
+MSH SEO > Settings.
+
+Service: https://www.indexnow.org
+Documentation: https://www.indexnow.org/documentation
 
 == Changelog ==
 

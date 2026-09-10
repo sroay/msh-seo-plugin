@@ -766,14 +766,29 @@ class MSH_WooCommerce {
      * @return void
      */
     public static function save_product_data_fields( $product_id ) {
+        // WooCommerce fires this from WC_Meta_Box_Product_Data::save(), which
+        // checks its own nonce and capability first. Checking again here costs
+        // nothing and means this handler is safe on its own terms rather than
+        // on its caller's — anything else that ever fires
+        // `woocommerce_process_product_meta` cannot write product meta through
+        // it.
+        if ( ! isset( $_POST['woocommerce_meta_nonce'] )
+            || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['woocommerce_meta_nonce'] ) ), 'woocommerce_save_data' ) ) {
+            return;
+        }
+
+        if ( ! current_user_can( 'edit_post', $product_id ) ) {
+            return;
+        }
+
         $fields = array( '_msh_product_gtin', '_msh_product_mpn', '_msh_product_brand' );
 
         foreach ( $fields as $field ) {
-            if ( isset( $_POST[ $field ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            if ( isset( $_POST[ $field ] ) ) {
                 update_post_meta(
                     $product_id,
                     $field,
-                    sanitize_text_field( wp_unslash( $_POST[ $field ] ) ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                    sanitize_text_field( wp_unslash( $_POST[ $field ] ) )
                 );
             }
         }
