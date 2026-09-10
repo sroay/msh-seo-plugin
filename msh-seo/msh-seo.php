@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: MSH SEO – AI-Powered SEO Tools
+ * Plugin Name: MSH SEO
  * Plugin URI: https://marketingsohigh.com
  * Description: Free SEO tools for WordPress with AI-powered content optimization. Connects to Marketing So High for advanced AI features.
  * Version: 1.4.0
