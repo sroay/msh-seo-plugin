@@ -64,11 +64,6 @@ require_once MSH_SEO_DIR . 'includes/class-msh-site-health.php';
  * installs the plugin by hand or ships their own language pack, which is
  * otherwise silently untranslated despite 300+ strings being ready for it.
  */
-function msh_seo_load_textdomain() {
-	load_plugin_textdomain( 'msh-seo', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
-}
-add_action( 'init', 'msh_seo_load_textdomain' );
-
 function msh_seo_activate() {
     MSH_Redirects::create_tables();
     flush_rewrite_rules();
@@ -691,7 +686,7 @@ function msh_seo_rest_publish( WP_REST_Request $request ) {
 
             // Clean up temp file if it still exists
             if ( file_exists( $tmp ) ) {
-                @unlink( $tmp );
+                wp_delete_file( $tmp );
             }
         }
     }

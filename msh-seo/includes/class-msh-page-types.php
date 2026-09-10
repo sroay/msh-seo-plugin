@@ -717,6 +717,7 @@ class MSH_Page_Types {
                         'name'  => __( 'Q&A Format (5+ Questions)', 'msh-seo' ),
                         'pass'  => $pass,
                         'score' => $pass ? 20 : ( $count >= 3 ? 12 : ( $count >= 1 ? 5 : 0 ) ),
+                        /* translators: %d: number of question headings found in the content. */
                         'tip'   => sprintf( __( 'Add at least 5 questions as headings ending with "?". Found: %d.', 'msh-seo' ), $count ),
                     );
                 },

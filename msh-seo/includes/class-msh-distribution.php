@@ -136,6 +136,7 @@ class MSH_Distribution {
         // the way in, and its own helper is the one that reverses exactly that.
         // Each decoded channel is then constrained to a key, so nothing
         // arbitrary reaches the API from a form field.
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- decoded on the next line, then every value is passed through sanitize_key.
         $raw_channels = isset( $_POST['channels'] ) ? wp_unslash( $_POST['channels'] ) : '[]';
         $channels     = json_decode( is_string( $raw_channels ) ? $raw_channels : '[]', true );
         $channels     = is_array( $channels ) ? array_values( array_filter( array_map( 'sanitize_key', $channels ) ) ) : array();
@@ -190,6 +191,7 @@ class MSH_Distribution {
 
             wp_send_json_success( array(
                 'message'         => sprintf(
+                    /* translators: %s: comma-separated list of channel names the post was queued for. */
                     __( 'Queued for distribution: %s', 'msh-seo' ),
                     implode( ', ', $data['queued_channels'] ?? $channels )
                 ),

@@ -20,14 +20,22 @@ const skipFiles = [
   'package-lock.json',
   'package.json',
   'webpack.config.js',
-  '.gitignore',
 ];
+
+// Nothing that starts with a dot.
+//
+// wordpress.org's Plugin Check reports "Hidden files are not permitted", and
+// this list used to name `.gitignore` by hand — so when `.distignore` was added
+// later it shipped inside the zip and the check flagged it. Naming each dotfile
+// individually only ever catches the ones somebody remembered.
+const isHidden = (name) => name.startsWith('.');
 
 function addDir(archive, dirPath, zipPath) {
   const entries = fs.readdirSync(dirPath, { withFileTypes: true });
   for (const entry of entries) {
     const fullPath = path.join(dirPath, entry.name);
     const entryZipPath = zipPath ? `${zipPath}/${entry.name}` : entry.name;
+    if (isHidden(entry.name)) continue;
     if (entry.isDirectory()) {
       if (skipDirs.includes(entry.name)) continue;
       addDir(archive, fullPath, entryZipPath);

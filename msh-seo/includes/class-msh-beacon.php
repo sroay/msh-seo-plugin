@@ -708,7 +708,9 @@ class MSH_Beacon {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			error_log( '[MSH Beacon] Send failed: ' . $response->get_error_message() );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( '[MSH Beacon] Send failed: ' . $response->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- debug-only diagnostic.
+			}
 			return $response;
 		}
 
@@ -717,7 +719,9 @@ class MSH_Beacon {
 
 		if ( $code >= 400 ) {
 			$msg = isset( $body['error'] ) ? $body['error'] : 'HTTP ' . $code;
-			error_log( '[MSH Beacon] Rejected: ' . $msg );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( '[MSH Beacon] Rejected: ' . $msg ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- debug-only diagnostic.
+			}
 			return new WP_Error( 'beacon_rejected', $msg );
 		}
 

@@ -25,10 +25,11 @@ class MSH_Tracking {
     const PATTERN = '/^G-[A-Z0-9]{6,12}$/';
 
     public static function init() {
-        // Priority 4: after MSH_Meta_Tags (1) and MSH_Schema (2), before the
-        // theme's own head output, so the tag sits where Google's own
-        // installer would put it.
-        add_action( 'wp_head', array( __CLASS__, 'output' ), 4 );
+        // Enqueued rather than echoed into wp_head. wordpress.org requires every
+        // script to go through wp_enqueue_script, and doing it properly hands
+        // WordPress the async attribute and the head placement Google asks for
+        // instead of hand-writing both.
+        add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
         add_action( 'rest_api_init', array( __CLASS__, 'register_rest' ) );
     }
 
@@ -87,11 +88,28 @@ class MSH_Tracking {
         if ( '' === $id ) {
             return;
         }
-        echo "<!-- Google tag (gtag.js) — installed by MSH SEO -->\n";
-        printf( "<script async src=\"https://www.googletagmanager.com/gtag/js?id=%s\"></script>\n", esc_attr( $id ) );
-        printf(
-            "<script>\n  window.dataLayer = window.dataLayer || [];\n  function gtag(){dataLayer.push(arguments);}\n  gtag('js', new Date());\n  gtag('config', '%s');\n</script>\n",
-            esc_js( $id )
+
+        // No version string: this is Google's own file, and appending ?ver= to it
+        // would only bust their cache.
+        wp_enqueue_script(
+            'msh-seo-gtag',
+            'https://www.googletagmanager.com/gtag/js?id=' . rawurlencode( $id ),
+            array(),
+            null,
+            false
+        );
+        wp_script_add_data( 'msh-seo-gtag', 'strategy', 'async' );
+
+        // wp_json_encode rather than a quoted %s: it emits the id as a JavaScript
+        // string literal with its own escaping, so the config line cannot be
+        // broken by whatever the id turns out to contain.
+        wp_add_inline_script(
+            'msh-seo-gtag',
+            'window.dataLayer = window.dataLayer || [];'
+                . 'function gtag(){dataLayer.push(arguments);}'
+                . 'gtag("js", new Date());'
+                . 'gtag("config", ' . wp_json_encode( $id ) . ');',
+            'after'
         );
     }
 

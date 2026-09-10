@@ -301,7 +301,9 @@ class MSH_Autopilot {
         ) );
 
         if ( is_wp_error( $response ) ) {
-            error_log( '[MSH Autopilot] Report failed: ' . $response->get_error_message() );
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( '[MSH Autopilot] Report failed: ' . $response->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- debug-only diagnostic.
+            }
             return $response;
         }
 
@@ -310,7 +312,9 @@ class MSH_Autopilot {
 
         if ( $code >= 400 ) {
             $msg = isset( $body['error'] ) ? $body['error'] : 'HTTP ' . $code;
-            error_log( '[MSH Autopilot] Report rejected: ' . $msg );
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( '[MSH Autopilot] Report rejected: ' . $msg ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- debug-only diagnostic.
+            }
             return new WP_Error( 'autopilot_report_failed', $msg );
         }
 
@@ -524,7 +528,8 @@ class MSH_Autopilot {
                 <div class="notice notice-warning" style="margin-top:16px;">
                     <p><strong><?php esc_html_e( 'Not Connected', 'msh-seo' ); ?></strong> —
                     <?php printf(
-                        esc_html__( 'Autopilot requires a connection to MSH. %sConnect now%s.', 'msh-seo' ),
+                        /* translators: 1: opening anchor tag linking to the MSH SEO settings page, 2: closing anchor tag. */
+                        esc_html__( 'Autopilot requires a connection to MSH. %1$sConnect now%2$s.', 'msh-seo' ),
                         '<a href="' . esc_url( admin_url( 'admin.php?page=msh-seo' ) ) . '">',
                         '</a>'
                     ); ?></p>
@@ -671,7 +676,8 @@ class MSH_Autopilot {
                 </ol>
                 <p style="color:#666;margin-bottom:0;">
                     <?php printf(
-                        esc_html__( 'Manage your autopilot queue and review pending refreshes at %syour MSH dashboard%s.', 'msh-seo' ),
+                        /* translators: 1: opening anchor tag linking to the MSH dashboard, 2: closing anchor tag. */
+                        esc_html__( 'Manage your autopilot queue and review pending refreshes at %1$syour MSH dashboard%2$s.', 'msh-seo' ),
                         '<a href="https://app.marketingsohigh.com/seo/autopilot" target="_blank" rel="noopener">',
                         '</a>'
                     ); ?>

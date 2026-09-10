@@ -312,7 +312,7 @@ class MSH_Freshness {
         printf(
             '<span class="msh-freshness-badge" style="background:%s;color:#fff;">%d &mdash; %s</span>',
             esc_attr( $color ),
-            $score,
+            absint( $score ),
             esc_html( $label )
         );
     }

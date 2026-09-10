@@ -434,8 +434,8 @@ class MSH_Meta_Tags {
             if ( $thumb_id ) {
                 $img_data = wp_get_attachment_image_src( $thumb_id, 'large' );
                 if ( $img_data ) {
-                    printf( '<meta property="og:image:width" content="%d" />' . "\n", $img_data[1] );
-                    printf( '<meta property="og:image:height" content="%d" />' . "\n", $img_data[2] );
+                    printf( '<meta property="og:image:width" content="%d" />' . "\n", absint( $img_data[1] ) );
+                    printf( '<meta property="og:image:height" content="%d" />' . "\n", absint( $img_data[2] ) );
                 }
             }
         } else {
