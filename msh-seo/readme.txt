@@ -172,8 +172,7 @@ Answer Engine Optimization helps your content get cited by AI search engines lik
 3. Schema type selector with 14 options
 4. SEO Analytics dashboard with score distribution
 5. Redirect manager with 404 logging
-6. WooCommerce product SEO fields
-7. WordPress dashboard SEO overview widget
+6. WordPress dashboard SEO overview widget
 
 == External services ==
 
