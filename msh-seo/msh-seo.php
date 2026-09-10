@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: MSH SEO
- * Plugin URI: https://marketingsohigh.com
+ * Plugin URI: https://github.com/sroay/msh-seo-plugin
  * Description: Free SEO tools for WordPress with AI-powered content optimization. Connects to Marketing So High for advanced AI features.
  * Version: 1.4.0
  * Author: Marketing So High
- * Author URI: https://marketingsohigh.com
+ * Author URI: https://technobelieve.com
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: msh-seo
