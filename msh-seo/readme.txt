@@ -1,5 +1,5 @@
 === MSH SEO - AI-Powered SEO Tools ===
-Contributors: marketingsohigh
+Contributors: technobelievesolutions
 Tags: seo, ai seo, schema markup, sitemap, content optimization
 Requires at least: 6.5
 Tested up to: 7.1
