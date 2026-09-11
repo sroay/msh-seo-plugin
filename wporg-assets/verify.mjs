@@ -131,8 +131,14 @@ for (const c of captions) {
 
 // ---------------------------------------------------------------------------
 // 3. Filenames must be lowercase. Uppercase "won't work", silently.
+//
+//    Only for files that actually travel to SVN. README.md and verify.mjs live
+//    here to explain and guard the folder and are never committed to
+//    wordpress.org — the first run of this check failed on its own README.
 // ---------------------------------------------------------------------------
+const LOCAL_ONLY = new Set(["README.md", "verify.mjs"]);
 for (const f of present) {
+  if (LOCAL_ONLY.has(f)) continue;
   if (f !== f.toLowerCase()) errors.push(`${f} has uppercase characters — wordpress.org requires lowercase`);
 }
 
