@@ -554,15 +554,17 @@ class MSH_Autopilot {
                     </div>
                     <div style="color:#666;margin-top:4px;"><?php esc_html_e( 'Next Scan', 'msh-seo' ); ?></div>
                 </div>
-                <div style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:20px;border-left:4px solid #8c5ae8;">
-                    <div style="font-size:20px;font-weight:700;color:#8c5ae8;">
-                        <?php
-                        $modes = array( 'full' => 'Full Auto', 'approval' => 'Approval', 'off' => 'Off' );
-                        echo esc_html( $modes[ $default_mode ] ?? 'Approval' );
-                        ?>
-                    </div>
-                    <div style="color:#666;margin-top:4px;"><?php esc_html_e( 'Default Mode', 'msh-seo' ); ?></div>
-                </div>
+            </div>
+
+            <?php
+            // The refresh modes that used to be offered here (Full Auto / Approval /
+            // Off) never did anything: the choice was saved only as a local option
+            // and never sent to MSH, and the dashboard's automatic rewriter was
+            // withdrawn before it ever ran (it could add invented statistics and
+            // truncate long posts). Autopilot scans and scores; it does not rewrite.
+            ?>
+            <div class="notice notice-info inline" style="margin:0 0 20px;">
+                <p><?php esc_html_e( 'Autopilot scans your posts and reports which ones are ageing to your MSH dashboard. It does not rewrite or republish content.', 'msh-seo' ); ?></p>
             </div>
 
             <!-- Manual Scan -->
@@ -583,25 +585,6 @@ class MSH_Autopilot {
             <div style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:24px;margin-bottom:20px;">
                 <h2 style="margin-top:0;"><?php esc_html_e( 'Autopilot Settings', 'msh-seo' ); ?></h2>
                 <table class="form-table" role="presentation">
-                    <tr>
-                        <th scope="row">
-                            <label for="msh-ap-mode"><?php esc_html_e( 'Default Refresh Mode', 'msh-seo' ); ?></label>
-                        </th>
-                        <td>
-                            <select id="msh-ap-mode" style="min-width:200px;">
-                                <option value="full" <?php selected( $default_mode, 'full' ); ?>>
-                                    <?php esc_html_e( 'Full Auto — Refresh & publish automatically', 'msh-seo' ); ?>
-                                </option>
-                                <option value="approval" <?php selected( $default_mode, 'approval' ); ?>>
-                                    <?php esc_html_e( 'Approval Required — Save as draft, wait for review', 'msh-seo' ); ?>
-                                </option>
-                                <option value="off" <?php selected( $default_mode, 'off' ); ?>>
-                                    <?php esc_html_e( 'Off — Monitor only, no refreshes', 'msh-seo' ); ?>
-                                </option>
-                            </select>
-                            <p class="description"><?php esc_html_e( 'Controls what happens when autopilot detects a stale article. You can override per-article in the MSH dashboard.', 'msh-seo' ); ?></p>
-                        </td>
-                    </tr>
                     <tr>
                         <th scope="row">
                             <label for="msh-ap-frequency"><?php esc_html_e( 'Scan Frequency', 'msh-seo' ); ?></label>
@@ -628,7 +611,7 @@ class MSH_Autopilot {
                         <td>
                             <input type="number" id="msh-ap-min-age" value="<?php echo esc_attr( $min_age_days ); ?>" min="0" max="365" style="width:80px;" />
                             <span><?php esc_html_e( 'days', 'msh-seo' ); ?></span>
-                            <p class="description"><?php esc_html_e( 'Only flag articles older than this for refresh. Posts younger than this are skipped.', 'msh-seo' ); ?></p>
+                            <p class="description"><?php esc_html_e( 'Only report articles older than this. Posts younger than this are skipped.', 'msh-seo' ); ?></p>
                         </td>
                     </tr>
                     <tr>
@@ -648,7 +631,7 @@ class MSH_Autopilot {
                         <td>
                             <label style="display:flex;align-items:flex-start;gap:8px;">
                                 <input type="checkbox" id="msh-ap-ping" value="1" <?php checked( $auto_ping ); ?> style="margin-top:3px;" />
-                                <span><?php esc_html_e( 'Automatically ping Google (via sitemap) and IndexNow after a post is refreshed. Recommended: ON — Tells search engines to re-crawl the updated page faster.', 'msh-seo' ); ?></span>
+                                <span><?php esc_html_e( 'Ping Google (via sitemap) and IndexNow when MSH updates a post through this plugin, so search engines re-crawl it sooner. Recommended: ON.', 'msh-seo' ); ?></span>
                             </label>
                         </td>
                     </tr>
@@ -670,14 +653,12 @@ class MSH_Autopilot {
                 <ol style="color:#333;line-height:1.8;">
                     <li><strong><?php esc_html_e( 'Scan', 'msh-seo' ); ?></strong> — <?php esc_html_e( 'The plugin analyzes every published post for freshness, outdated years, missing schema, link quality, and content depth.', 'msh-seo' ); ?></li>
                     <li><strong><?php esc_html_e( 'Report', 'msh-seo' ); ?></strong> — <?php esc_html_e( 'Signals are sent to your MSH dashboard where articles are scored and prioritized.', 'msh-seo' ); ?></li>
-                    <li><strong><?php esc_html_e( 'Refresh', 'msh-seo' ); ?></strong> — <?php esc_html_e( 'The dashboard uses AI to rewrite stale content with current info, better structure, and improved SEO.', 'msh-seo' ); ?></li>
-                    <li><strong><?php esc_html_e( 'Publish', 'msh-seo' ); ?></strong> — <?php esc_html_e( 'Refreshed content is sent back to WordPress (auto-publish or draft depending on your mode).', 'msh-seo' ); ?></li>
-                    <li><strong><?php esc_html_e( 'Learn', 'msh-seo' ); ?></strong> — <?php esc_html_e( 'The system tracks ranking changes after each refresh to improve future decisions.', 'msh-seo' ); ?></li>
+                    <li><strong><?php esc_html_e( 'Review', 'msh-seo' ); ?></strong> — <?php esc_html_e( 'You see which articles are ageing and decide which to update. Nothing is rewritten automatically.', 'msh-seo' ); ?></li>
                 </ol>
                 <p style="color:#666;margin-bottom:0;">
                     <?php printf(
                         /* translators: 1: opening anchor tag linking to the MSH dashboard, 2: closing anchor tag. */
-                        esc_html__( 'Manage your autopilot queue and review pending refreshes at %1$syour MSH dashboard%2$s.', 'msh-seo' ),
+                        esc_html__( 'See which articles need attention at %1$syour MSH dashboard%2$s.', 'msh-seo' ),
                         '<a href="https://app.marketingsohigh.com/seo/autopilot" target="_blank" rel="noopener">',
                         '</a>'
                     ); ?>
@@ -731,7 +712,6 @@ class MSH_Autopilot {
                 $.post(mshAdmin.ajaxUrl, {
                     action: 'msh_autopilot_save_settings',
                     nonce: mshAdmin.nonce,
-                    default_mode: $('#msh-ap-mode').val(),
                     scan_frequency: $('#msh-ap-frequency').val(),
                     min_age_days: $('#msh-ap-min-age').val(),
                     min_word_count: $('#msh-ap-min-words').val(),
