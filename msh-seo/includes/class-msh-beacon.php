@@ -242,6 +242,11 @@ class MSH_SEO_Beacon {
 		// cheapest catastrophic fault there is to check.
 		$subsystems['indexing'] = get_option( 'blog_public' ) ? 'ok' : 'error';
 
+		// A key file search engines cannot read makes every IndexNow submission
+		// a silent no-op. technobelieve.com's front end did not pass it through
+		// for months.
+		$subsystems['indexnow'] = MSH_SEO_Indexing::key_file_state();
+
 		return array(
 			'plugin_version' => MSH_SEO_VERSION,
 			'wp_version'     => $wp_version,

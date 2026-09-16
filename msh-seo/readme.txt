@@ -4,7 +4,7 @@ Tags: seo, schema markup, sitemap, redirects, indexnow
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.1
+Stable tag: 1.5.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -174,6 +174,9 @@ Terms of Service: https://marketingsohigh.com/terms
 Privacy Policy: https://marketingsohigh.com/privacy
 
 == Changelog ==
+
+= 1.5.2 =
+* Added: the daily health report now says whether search engines can read the site's IndexNow key file. On sites whose front end does not serve WordPress's files, submissions were being ignored without any warning.
 
 = 1.5.1 =
 * Fixed: a redirect MSH created automatically for a broken link could hide a post published later at the same address, sending every visitor elsewhere. Automatic redirects now apply only while the address is still a 404, and new ones are not created for addresses that already have a published post or page. Redirects you add yourself are unchanged.

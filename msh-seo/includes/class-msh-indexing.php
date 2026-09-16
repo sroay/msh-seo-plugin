@@ -311,6 +311,22 @@ class MSH_SEO_Indexing {
      * @param string $key          The IndexNow key.
      * @return true|string True when the key is served, otherwise the reason.
      */
+    /**
+     * Whether search engines can read this site's IndexNow key file, for the
+     * daily report. 'off' when submissions are switched off or no key exists
+     * yet. On a headless site the front end must pass the file through; when
+     * it does not, every submission is silently ignored.
+     *
+     * @return string 'ok', 'error' or 'off'.
+     */
+    public static function key_file_state() {
+        $key = (string) get_option( self::INDEXNOW_KEY_OPTION, '' );
+        if ( ! self::enabled() || '' === $key ) {
+            return 'off';
+        }
+        return true === self::check_key_file( home_url( '/' . $key . '.txt' ), $key ) ? 'ok' : 'error';
+    }
+
     private static function check_key_file( $key_location, $key ) {
         $cached = get_transient( self::KEY_CHECK_TRANSIENT );
         if ( is_array( $cached ) && isset( $cached['location'], $cached['result'] ) && $cached['location'] === $key_location ) {
