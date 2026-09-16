@@ -4,7 +4,7 @@ Tags: seo, ai seo, schema markup, sitemap, content optimization
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -261,6 +261,10 @@ Service: https://www.indexnow.org
 Documentation: https://www.indexnow.org/documentation
 
 == Changelog ==
+
+= 1.4.1 =
+* Fixed: on a headless site, IndexNow was told about WordPress's permalink (example.com/my-post/) instead of the address the front end serves (example.com/blog/my-post), so search engines were handed a redirect. Before submitting, the plugin now follows redirects on the live site and sends the address that answers. A bulk re-submit learns the pattern from one post of each type rather than checking every URL. Anything uncertain keeps the permalink.
+* Fixed: IndexNow answers 200 before it verifies the key, then drops the URLs if the key file cannot be fetched. The submission log recorded those as successes. The plugin now checks that the key file is reachable at the key location and marks the submission failed, with the reason, when it is not.
 
 = 1.4.0 =
 * New: an author box under every post with the founder's name, role, a one-line bio and profile links, delivered by the MSH dashboard. Readers and answer engines see who is speaking. Turn off with the msh_seo_author_box_enabled option.

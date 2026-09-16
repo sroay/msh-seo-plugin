@@ -41,6 +41,27 @@ class MSH_Indexing {
     const MAX_LOG_ENTRIES = 20;
 
     /**
+     * Largest batch whose URLs are each checked against the live site.
+     *
+     * @var int
+     */
+    const RESOLVE_LIMIT = 10;
+
+    /**
+     * Redirects followed when finding a URL's public address.
+     *
+     * @var int
+     */
+    const MAX_REDIRECTS = 5;
+
+    /**
+     * Transient caching whether the key file is reachable.
+     *
+     * @var string
+     */
+    const KEY_CHECK_TRANSIENT = 'msh_indexnow_key_check';
+
+    /**
      * Initialize IndexNow hooks.
      *
      * Hooks into post publish/update to auto-submit URLs, and
@@ -153,9 +174,18 @@ class MSH_Indexing {
         // Enforce the 10,000 URL limit per batch.
         $urls = array_slice( $urls, 0, 10000 );
 
+        // A publish or an autopilot update sends a handful of URLs, so each is
+        // checked against the live site. A bulk run maps its URLs in
+        // submit_all() instead: hundreds of lookups would stall the request.
+        if ( count( $urls ) <= self::RESOLVE_LIMIT ) {
+            $urls = array_map( array( __CLASS__, 'public_url' ), $urls );
+        }
+        $urls = array_values( array_unique( $urls ) );
+
         $key          = self::get_or_create_key();
         $host         = wp_parse_url( home_url(), PHP_URL_HOST );
         $key_location = home_url( '/' . $key . '.txt' );
+        $key_check    = self::check_key_file( $key_location, $key );
 
         $body = array(
             'host'        => $host,
@@ -189,10 +219,128 @@ class MSH_Indexing {
             }
         }
 
+        // IndexNow answers 200 before it verifies the key, then silently drops
+        // the URLs if the key file is missing. A 200 alone is not a success.
+        if ( $success && true !== $key_check ) {
+            $success   = false;
+            $error_msg = $key_check;
+        }
+
         // Log the submission.
         self::log_submission( $urls, $success, $status_code, $error_msg );
 
         return $success;
+    }
+
+    /**
+     * The address a search engine should be told about.
+     *
+     * On most sites that is the permalink. On a headless site WordPress's
+     * permalink can differ from the address the front end serves: WordPress
+     * says example.com/my-post/, the front end redirects it to
+     * example.com/blog/my-post. Submitting the permalink hands search engines
+     * a redirect. This follows the redirects on the live site and returns the
+     * address that finally answers 200.
+     *
+     * Anything uncertain returns the permalink unchanged, so the result is
+     * never worse than before: an error, a 4xx or 5xx, a redirect to another
+     * host (IndexNow rejects URLs outside the submitted host), or too many hops.
+     *
+     * @param string $url The permalink.
+     * @return string The URL to submit.
+     */
+    public static function public_url( $url ) {
+        $url  = (string) $url;
+        $host = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+
+        $current = $url;
+        for ( $hop = 0; $hop <= self::MAX_REDIRECTS; $hop++ ) {
+            $response = wp_remote_get( $current, array(
+                'timeout'             => 5,
+                'redirection'         => 0,
+                'limit_response_size' => 2048,
+            ) );
+            if ( is_wp_error( $response ) ) {
+                return $url;
+            }
+
+            $code = (int) wp_remote_retrieve_response_code( $response );
+            if ( $code >= 200 && $code < 300 ) {
+                return $current;
+            }
+            if ( $code < 300 || $code >= 400 ) {
+                return $url;
+            }
+
+            $location = wp_remote_retrieve_header( $response, 'location' );
+            if ( is_array( $location ) ) {
+                $location = end( $location );
+            }
+            if ( empty( $location ) ) {
+                return $url;
+            }
+
+            $next = WP_Http::make_absolute_url( $location, $current );
+            if ( strtolower( (string) wp_parse_url( $next, PHP_URL_HOST ) ) !== $host ) {
+                return $url;
+            }
+            $current = $next;
+        }
+
+        return $url;
+    }
+
+    /**
+     * Can a search engine fetch the key file from the key location?
+     *
+     * The key lives in WordPress, but the key location is on the Site Address.
+     * On a headless site that address is served by the front end, which may
+     * not pass the file through. Cached: 12 hours when it works, 1 hour when it
+     * does not, so a fix shows up quickly.
+     *
+     * @param string $key_location URL of the key file.
+     * @param string $key          The IndexNow key.
+     * @return true|string True when the key is served, otherwise the reason.
+     */
+    private static function check_key_file( $key_location, $key ) {
+        $cached = get_transient( self::KEY_CHECK_TRANSIENT );
+        if ( is_array( $cached ) && isset( $cached['location'], $cached['result'] ) && $cached['location'] === $key_location ) {
+            return $cached['result'];
+        }
+
+        $response = wp_remote_get( $key_location, array(
+            'timeout'             => 5,
+            'redirection'         => 0,
+            'limit_response_size' => 1024,
+        ) );
+
+        if ( is_wp_error( $response ) ) {
+            // The check itself failed. Do not blame the key for a network
+            // blip; ask again in a few minutes.
+            set_transient( self::KEY_CHECK_TRANSIENT, array( 'location' => $key_location, 'result' => true ), 10 * MINUTE_IN_SECONDS );
+            return true;
+        }
+
+        $code = (int) wp_remote_retrieve_response_code( $response );
+        if ( 200 === $code && trim( wp_remote_retrieve_body( $response ) ) === $key ) {
+            set_transient( self::KEY_CHECK_TRANSIENT, array( 'location' => $key_location, 'result' => true ), 12 * HOUR_IN_SECONDS );
+            return true;
+        }
+
+        if ( 200 === $code ) {
+            $what = __( 'does not contain the key', 'msh-seo' );
+        } else {
+            /* translators: %d: HTTP status code */
+            $what = sprintf( __( 'answered HTTP %d', 'msh-seo' ), $code );
+        }
+        $result = sprintf(
+            /* translators: 1: key file URL, 2: what the URL answered */
+            __( 'The IndexNow key file %1$s %2$s, so search engines cannot confirm this site owns the key and will ignore these URLs.', 'msh-seo' ),
+            $key_location,
+            $what
+        );
+        set_transient( self::KEY_CHECK_TRANSIENT, array( 'location' => $key_location, 'result' => $result ), HOUR_IN_SECONDS );
+        return $result;
     }
 
     /**
@@ -265,7 +413,7 @@ class MSH_Indexing {
             self::submit_urls( $urls );
         }
         if ( ! empty( $google_url ) && self::google_indexing_enabled() ) {
-            self::submit_url_google( $google_url, 'URL_UPDATED' );
+            self::submit_url_google( self::public_url( $google_url ), 'URL_UPDATED' );
         }
     }
 
@@ -384,11 +532,12 @@ class MSH_Indexing {
             'fields'      => 'ids',
         ) );
 
-        $urls = array();
+        $urls   = array();
+        $shapes = array();
         foreach ( $ids as $id ) {
             $permalink = get_permalink( $id );
             if ( $permalink ) {
-                $urls[] = $permalink;
+                $urls[] = self::bulk_public_url( $id, $permalink, $shapes );
             }
         }
         $urls = array_values( array_unique( $urls ) );
@@ -434,6 +583,75 @@ class MSH_Indexing {
     // ------------------------------------------------------------------
     // Private helpers
     // ------------------------------------------------------------------
+
+    /**
+     * Public address for one post in a bulk run, without a lookup per post.
+     *
+     * The first post of each type is resolved against the live site with
+     * public_url(). The way its permalink changed (example.com/<slug>/ became
+     * example.com/blog/<slug>) is then applied to every other post of that
+     * type whose permalink has the same shape. A post that does not fit the
+     * shape keeps its permalink.
+     *
+     * @param int    $post_id   Post ID.
+     * @param string $permalink The post's permalink.
+     * @param array  $shapes    Per-type shapes found so far, filled in by reference.
+     * @return string
+     */
+    private static function bulk_public_url( $post_id, $permalink, &$shapes ) {
+        $type = (string) get_post_type( $post_id );
+        $slug = (string) get_post_field( 'post_name', $post_id );
+        if ( '' === $slug ) {
+            return $permalink;
+        }
+
+        if ( ! array_key_exists( $type, $shapes ) ) {
+            $shapes[ $type ] = self::url_shape( $permalink, self::public_url( $permalink ), $slug );
+        }
+
+        return self::apply_url_shape( $shapes[ $type ], $permalink, $slug );
+    }
+
+    /**
+     * Split a before/after URL pair around the slug they share.
+     *
+     * @param string $from Permalink.
+     * @param string $to   Public address.
+     * @param string $slug Post slug.
+     * @return array|false [ from_prefix, from_suffix, to_prefix, to_suffix ], or false when the slug is not in both exactly once.
+     */
+    private static function url_shape( $from, $to, $slug ) {
+        if ( 1 !== substr_count( $from, $slug ) || 1 !== substr_count( $to, $slug ) ) {
+            return false;
+        }
+        $i = strpos( $from, $slug );
+        $j = strpos( $to, $slug );
+        return array(
+            substr( $from, 0, $i ),
+            substr( $from, $i + strlen( $slug ) ),
+            substr( $to, 0, $j ),
+            substr( $to, $j + strlen( $slug ) ),
+        );
+    }
+
+    /**
+     * Rewrite a permalink with a shape from url_shape().
+     *
+     * @param array|false $shape     Shape, or false for none.
+     * @param string      $permalink Permalink.
+     * @param string      $slug      Post slug.
+     * @return string
+     */
+    private static function apply_url_shape( $shape, $permalink, $slug ) {
+        if ( ! is_array( $shape ) ) {
+            return $permalink;
+        }
+        list( $from_prefix, $from_suffix, $to_prefix, $to_suffix ) = $shape;
+        if ( $permalink !== $from_prefix . $slug . $from_suffix ) {
+            return $permalink;
+        }
+        return $to_prefix . $slug . $to_suffix;
+    }
 
     /**
      * Get a cached Google OAuth access token, minting one from the stored
