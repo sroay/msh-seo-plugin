@@ -4,7 +4,7 @@ Tags: seo, schema markup, sitemap, redirects, indexnow
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.0
+Stable tag: 1.5.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -174,6 +174,9 @@ Terms of Service: https://marketingsohigh.com/terms
 Privacy Policy: https://marketingsohigh.com/privacy
 
 == Changelog ==
+
+= 1.5.1 =
+* Fixed: a redirect MSH created automatically for a broken link could hide a post published later at the same address, sending every visitor elsewhere. Automatic redirects now apply only while the address is still a 404, and new ones are not created for addresses that already have a published post or page. Redirects you add yourself are unchanged.
 
 = 1.5.0 =
 * Changed: every option, post meta key, database table, transient, AJAX action, nonce and class now uses the msh_seo prefix, as WordPress.org requires. Existing data is moved to the new names automatically on the first page load after the update, including redirect rules, the 404 log and focus keywords.

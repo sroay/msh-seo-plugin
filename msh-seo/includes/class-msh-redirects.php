@@ -147,6 +147,16 @@ class MSH_SEO_Redirects {
         add_action( 'admin_init', array( __CLASS__, 'ensure_schema' ) );
     }
 
+    /**
+     * Whether a rule was created automatically by MSH rather than by a person.
+     *
+     * @param string|null $note The rule's note.
+     * @return bool
+     */
+    public static function is_automatic( $note ) {
+        return 0 === strpos( (string) $note, 'msh-auto-heal' );
+    }
+
     public static function process_redirects() {
         if ( is_admin() ) {
             return;
@@ -197,7 +207,7 @@ class MSH_SEO_Redirects {
         // the subfolder prefix removed. '' never matches a stored source, so
         // the third slot is inert on a root install.
         $redirect = $wpdb->get_row( $wpdb->prepare(
-            'SELECT id, source_url, target_url, redirect_type FROM %i
+            'SELECT id, source_url, target_url, redirect_type, note FROM %i
               WHERE source_url IN ( %s, %s, %s )
            ORDER BY CASE
                       WHEN source_url = %s THEN 0
@@ -212,6 +222,16 @@ class MSH_SEO_Redirects {
             $request,
             $path
         ) );
+
+        // A rule MSH created by itself (for a URL that was 404ing) must not
+        // outlive the 404. If that address has since become a real post or
+        // page, the post wins: otherwise an article published at an address
+        // that once 404'd is unreachable, redirected away on every visit.
+        // Rules a person wrote, or approved, still apply to live URLs, because
+        // redirecting a live page somewhere else can be exactly what they want.
+        if ( $redirect && self::is_automatic( $redirect->note ) && ! is_404() ) {
+            $redirect = null;
+        }
 
         if ( $redirect ) {
             $target = $redirect->target_url;

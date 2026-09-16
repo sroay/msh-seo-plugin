@@ -658,6 +658,14 @@ class MSH_SEO_Beacon {
 				continue;
 			}
 
+			// The dashboard plans repairs from a 404 report that can be a day
+			// old. If the address has since been published, a rule would hide
+			// the new post.
+			if ( MSH_SEO_Redirects::is_automatic( $note ) && self::source_is_live( $source ) ) {
+				$skipped++;
+				continue;
+			}
+
 			$ok = $wpdb->insert(
 				$table,
 				array(
@@ -677,6 +685,26 @@ class MSH_SEO_Beacon {
 		}
 
 		return array( 'applied' => $applied, 'skipped' => $skipped );
+	}
+
+	/**
+	 * Whether a redirect source path is currently a published post or page.
+	 *
+	 * @param string $source Path as stored in the redirect table.
+	 * @return bool
+	 */
+	private static function source_is_live( $source ) {
+		$path = (string) wp_parse_url( $source, PHP_URL_PATH );
+		if ( '' === $path ) {
+			return false;
+		}
+		$home_path = rtrim( (string) wp_parse_url( home_url(), PHP_URL_PATH ), '/' );
+		$origin    = preg_replace( '#^(https?://[^/]+).*$#', '$1', home_url() );
+		// A path that already carries a subfolder install's prefix is absolute to
+		// the origin; anything else is relative to the site's home.
+		$url = ( '' !== $home_path && 0 === strpos( $path, $home_path . '/' ) ) ? $origin . $path : home_url( $path );
+		$id  = url_to_postid( $url );
+		return $id > 0 && 'publish' === get_post_status( $id );
 	}
 
 	/* ------------------------------------------------------------------
