@@ -300,18 +300,6 @@ class MSH_SEO_Indexing {
     }
 
     /**
-     * Can a search engine fetch the key file from the key location?
-     *
-     * The key lives in WordPress, but the key location is on the Site Address.
-     * On a headless site that address is served by the front end, which may
-     * not pass the file through. Cached: 12 hours when it works, 1 hour when it
-     * does not, so a fix shows up quickly.
-     *
-     * @param string $key_location URL of the key file.
-     * @param string $key          The IndexNow key.
-     * @return true|string True when the key is served, otherwise the reason.
-     */
-    /**
      * Whether search engines can read this site's IndexNow key file, for the
      * daily report. 'off' when submissions are switched off or no key exists
      * yet. On a headless site the front end must pass the file through; when
@@ -327,6 +315,18 @@ class MSH_SEO_Indexing {
         return true === self::check_key_file( home_url( '/' . $key . '.txt' ), $key ) ? 'ok' : 'error';
     }
 
+    /**
+     * Can a search engine fetch the key file from the key location?
+     *
+     * The key lives in WordPress, but the key location is on the Site Address.
+     * On a headless site that address is served by the front end, which may
+     * not pass the file through. Cached: 12 hours when it works, 1 hour when it
+     * does not, so a fix shows up quickly.
+     *
+     * @param string $key_location URL of the key file.
+     * @param string $key          The IndexNow key.
+     * @return true|string True when the key is served, otherwise the reason.
+     */
     private static function check_key_file( $key_location, $key ) {
         $cached = get_transient( self::KEY_CHECK_TRANSIENT );
         if ( is_array( $cached ) && isset( $cached['location'], $cached['result'] ) && $cached['location'] === $key_location ) {
