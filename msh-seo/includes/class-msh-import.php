@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Import {
+class MSH_SEO_Import {
 
     /**
      * Yoast SEO meta field mapping.
@@ -23,7 +23,7 @@ class MSH_Import {
     const YOAST_MAP = array(
         '_yoast_wpseo_title'    => '_msh_seo_title',
         '_yoast_wpseo_metadesc' => '_msh_seo_description',
-        '_yoast_wpseo_focuskw'  => '_msh_focus_keyword',
+        '_yoast_wpseo_focuskw'  => '_msh_seo_focus_keyword',
     );
 
     /**
@@ -34,7 +34,7 @@ class MSH_Import {
     const RANKMATH_MAP = array(
         'rank_math_title'         => '_msh_seo_title',
         'rank_math_description'   => '_msh_seo_description',
-        'rank_math_focus_keyword' => '_msh_focus_keyword',
+        'rank_math_focus_keyword' => '_msh_seo_focus_keyword',
     );
 
     /**
@@ -108,13 +108,13 @@ class MSH_Import {
 
                     <?php if ( $preview['posts_to_import'] > 0 ) : ?>
                         <form method="post" style="margin-top:12px;">
-                            <?php wp_nonce_field( 'msh_import_nonce' ); ?>
-                            <input type="hidden" name="msh_import_plugin" value="<?php echo esc_attr( $plugin['slug'] ); ?>" />
+                            <?php wp_nonce_field( 'msh_seo_import_nonce' ); ?>
+                            <input type="hidden" name="msh_seo_import_plugin" value="<?php echo esc_attr( $plugin['slug'] ); ?>" />
                             <?php submit_button( sprintf(
                                 /* translators: %s: plugin name */
                                 __( 'Import from %s', 'msh-seo' ),
                                 $plugin['name']
-                            ), 'primary', 'msh_import_submit', false ); ?>
+                            ), 'primary', 'msh_seo_import_submit', false ); ?>
                         </form>
                     <?php else : ?>
                         <p class="description" style="margin-top:12px;">
@@ -127,8 +127,8 @@ class MSH_Import {
 
         <?php
         // Handle form submission.
-        if ( isset( $_POST['msh_import_submit'] ) && check_admin_referer( 'msh_import_nonce' ) ) {
-            $slug   = sanitize_text_field( wp_unslash( $_POST['msh_import_plugin'] ?? '' ) );
+        if ( isset( $_POST['msh_seo_import_submit'] ) && check_admin_referer( 'msh_seo_import_nonce' ) ) {
+            $slug   = sanitize_text_field( wp_unslash( $_POST['msh_seo_import_plugin'] ?? '' ) );
             $result = self::import_from( $slug );
 
             if ( is_wp_error( $result ) ) {
@@ -199,7 +199,7 @@ class MSH_Import {
 
         if ( ! $mapping ) {
             return new WP_Error(
-                'msh_import_unknown_plugin',
+                'msh_seo_import_unknown_plugin',
                 __( 'Unknown SEO plugin slug.', 'msh-seo' )
             );
         }
@@ -209,7 +209,7 @@ class MSH_Import {
         // Count posts that have at least one source meta key set.
         $placeholders = implode( ',', array_fill( 0, count( $source_keys ), '%s' ) );
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- the interpolated list is only %s placeholders, one per value passed to prepare().
         $posts_with_data = (int) $wpdb->get_var(
             $wpdb->prepare(
                 "SELECT COUNT( DISTINCT post_id ) FROM {$wpdb->postmeta}
@@ -218,6 +218,7 @@ class MSH_Import {
                 ...$source_keys
             )
         );
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
         // Count posts that have source data but are missing MSH data.
         $msh_keys      = array_values( $mapping );
@@ -225,7 +226,7 @@ class MSH_Import {
         $msh_placeholders = implode( ',', array_fill( 0, count( $msh_unique ), '%s' ) );
 
         // Posts that have source data AND don't already have MSH meta.
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- the interpolated list is only %s placeholders, one per value passed to prepare().
         $posts_to_import = (int) $wpdb->get_var(
             $wpdb->prepare(
                 "SELECT COUNT( DISTINCT pm_source.post_id )
@@ -241,6 +242,7 @@ class MSH_Import {
                 ...array_merge( $source_keys, $msh_unique )
             )
         );
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
         $total_posts = (int) $wpdb->get_var(
             "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status IN ('publish', 'draft', 'pending', 'future', 'private')"
@@ -270,7 +272,7 @@ class MSH_Import {
 
         if ( ! $mapping ) {
             return new WP_Error(
-                'msh_import_unknown_plugin',
+                'msh_seo_import_unknown_plugin',
                 __( 'Unknown SEO plugin slug.', 'msh-seo' )
             );
         }
@@ -279,7 +281,7 @@ class MSH_Import {
         $placeholders = implode( ',', array_fill( 0, count( $source_keys ), '%s' ) );
 
         // Get all post IDs that have any of the source meta keys with non-empty values.
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- the interpolated list is only %s placeholders, one per value passed to prepare().
         $post_ids = $wpdb->get_col(
             $wpdb->prepare(
                 "SELECT DISTINCT post_id FROM {$wpdb->postmeta}
@@ -288,6 +290,7 @@ class MSH_Import {
                 ...$source_keys
             )
         );
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
         if ( empty( $post_ids ) ) {
             return 0;

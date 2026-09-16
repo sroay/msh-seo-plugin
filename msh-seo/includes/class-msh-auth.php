@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Auth {
+class MSH_SEO_Auth {
 
     const OPTION_KEY        = 'msh_seo_api_key';
     const OPTION_CONNECTION = 'msh_seo_connection_info';
@@ -145,7 +145,7 @@ class MSH_Auth {
      * @return array|WP_Error Connection info or error.
      */
     public static function verify_connection() {
-        $result = MSH_API::verify();
+        $result = MSH_SEO_API::verify();
 
         if ( is_wp_error( $result ) ) {
             delete_transient( self::TRANSIENT_VERIFY );
@@ -167,7 +167,7 @@ class MSH_Auth {
         // One-click Google Analytics: the same reply may carry the GA4
         // measurement id, so the tag goes live even if the direct push never
         // reached this site.
-        MSH_Tracking::absorb( $result );
+        MSH_SEO_Tracking::absorb( $result );
 
         // Bing Webmaster Tools ownership token, printed like the Google one.
         // ChatGPT and Copilot answer from Bing's index; unverified there, a

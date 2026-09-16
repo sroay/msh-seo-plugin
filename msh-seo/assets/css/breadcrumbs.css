@@ -1,0 +1,6 @@
+/* MSH SEO: breadcrumb trail. */
+.msh-breadcrumbs { font-size: 14px; color: #666; margin-bottom: 16px; }
+.msh-breadcrumbs a { color: #0073aa; text-decoration: none; }
+.msh-breadcrumbs a:hover { text-decoration: underline; }
+.msh-breadcrumbs .separator { margin: 0 8px; color: #999; }
+.msh-breadcrumbs .current { color: #333; font-weight: 500; }

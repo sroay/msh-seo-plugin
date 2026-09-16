@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_API {
+class MSH_SEO_API {
 
     const BASE_URL = 'https://app.marketingsohigh.com/api/plugin';
 
@@ -21,11 +21,11 @@ class MSH_API {
      * @return array|WP_Error  Parsed JSON response or error.
      */
     private static function request( $endpoint, $data = array(), $timeout = 60 ) {
-        $api_key = MSH_Auth::get_key();
+        $api_key = MSH_SEO_Auth::get_key();
 
         if ( empty( $api_key ) ) {
             return new WP_Error(
-                'msh_no_key',
+                'msh_seo_no_key',
                 __( 'No MSH API key configured. Connect your account in MSH SEO settings.', 'msh-seo' )
             );
         }
@@ -52,11 +52,11 @@ class MSH_API {
 
         if ( $code >= 400 ) {
             $message = isset( $json['error'] ) ? $json['error'] : __( 'API request failed.', 'msh-seo' );
-            return new WP_Error( 'msh_api_error', $message, array( 'status' => $code ) );
+            return new WP_Error( 'msh_seo_api_error', $message, array( 'status' => $code ) );
         }
 
         if ( null === $json ) {
-            return new WP_Error( 'msh_invalid_json', __( 'Invalid response from MSH API.', 'msh-seo' ) );
+            return new WP_Error( 'msh_seo_invalid_json', __( 'Invalid response from MSH API.', 'msh-seo' ) );
         }
 
         return $json;
@@ -74,7 +74,7 @@ class MSH_API {
         // at wp.example.com but the public site is rendered by Next.js at
         // example.com. MSH uses site_url to match/link seo_websites rows
         // (which store the canonical URL) and wp_url as the REST API target.
-        // Short timeout: the self-healing re-verify inside MSH_Auth::is_connected()
+        // Short timeout: the self-healing re-verify inside MSH_SEO_Auth::is_connected()
         // can run during page renders, so this must never hang a request.
         return self::request( '/verify', array(
             'site_url' => get_home_url(),
@@ -92,7 +92,7 @@ class MSH_API {
      * @return array|WP_Error
      */
     public static function analyze( $title, $content, $keyword, $url ) {
-        $cache_key = 'msh_analysis_' . md5( $title . $content . $keyword );
+        $cache_key = 'msh_seo_analysis_' . md5( $title . $content . $keyword );
         $cached    = get_transient( $cache_key );
 
         if ( false !== $cached ) {
@@ -191,16 +191,16 @@ class MSH_API {
      * @return array|WP_Error { config: { variants }, buckets, target_url }
      */
     public static function cta_config() {
-        $cached = get_transient( 'msh_cta_config' );
+        $cached = get_transient( 'msh_seo_cta_config' );
         if ( false !== $cached ) {
             // Empty array is a cached "unavailable" marker — return an error so
             // callers render nothing without re-hitting a slow/unreachable API.
-            return empty( $cached ) ? new WP_Error( 'msh_cta_unavailable', 'CTA config unavailable.' ) : $cached;
+            return empty( $cached ) ? new WP_Error( 'msh_seo_cta_unavailable', 'CTA config unavailable.' ) : $cached;
         }
 
-        $api_key = MSH_Auth::get_key();
+        $api_key = MSH_SEO_Auth::get_key();
         if ( empty( $api_key ) ) {
-            return new WP_Error( 'msh_no_key', 'No MSH API key configured.' );
+            return new WP_Error( 'msh_seo_no_key', 'No MSH API key configured.' );
         }
 
         // Short timeout: this runs during page render, so it must never hang.
@@ -215,17 +215,17 @@ class MSH_API {
         ) );
 
         if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) >= 400 ) {
-            set_transient( 'msh_cta_config', array(), 5 * MINUTE_IN_SECONDS );
-            return new WP_Error( 'msh_cta_unavailable', 'CTA config unavailable.' );
+            set_transient( 'msh_seo_cta_config', array(), 5 * MINUTE_IN_SECONDS );
+            return new WP_Error( 'msh_seo_cta_unavailable', 'CTA config unavailable.' );
         }
 
         $json = json_decode( wp_remote_retrieve_body( $response ), true );
         if ( empty( $json ) || empty( $json['config']['variants'] ) ) {
-            set_transient( 'msh_cta_config', array(), 5 * MINUTE_IN_SECONDS );
-            return new WP_Error( 'msh_cta_unavailable', 'CTA config unavailable.' );
+            set_transient( 'msh_seo_cta_config', array(), 5 * MINUTE_IN_SECONDS );
+            return new WP_Error( 'msh_seo_cta_unavailable', 'CTA config unavailable.' );
         }
 
-        set_transient( 'msh_cta_config', $json, HOUR_IN_SECONDS );
+        set_transient( 'msh_seo_cta_config', $json, HOUR_IN_SECONDS );
         return $json;
     }
 
@@ -237,7 +237,7 @@ class MSH_API {
      * @return bool
      */
     public static function conversion_event( $events ) {
-        $api_key = MSH_Auth::get_key();
+        $api_key = MSH_SEO_Auth::get_key();
         if ( empty( $api_key ) || empty( $events ) ) {
             return false;
         }
@@ -264,9 +264,9 @@ class MSH_API {
      * @return array|WP_Error
      */
     public static function growth_summary() {
-        $cached = get_transient( 'msh_growth_summary' );
+        $cached = get_transient( 'msh_seo_growth_summary' );
         if ( false !== $cached ) {
-            return empty( $cached ) ? new WP_Error( 'msh_growth_unavailable', 'Growth data unavailable.' ) : $cached;
+            return empty( $cached ) ? new WP_Error( 'msh_seo_growth_unavailable', 'Growth data unavailable.' ) : $cached;
         }
 
         $result = self::request( '/growth-summary', array(
@@ -274,9 +274,9 @@ class MSH_API {
         ), 8 );
 
         if ( is_wp_error( $result ) ) {
-            set_transient( 'msh_growth_summary', array(), 10 * MINUTE_IN_SECONDS );
+            set_transient( 'msh_seo_growth_summary', array(), 10 * MINUTE_IN_SECONDS );
         } else {
-            set_transient( 'msh_growth_summary', $result, 2 * HOUR_IN_SECONDS );
+            set_transient( 'msh_seo_growth_summary', $result, 2 * HOUR_IN_SECONDS );
         }
 
         return $result;
@@ -288,7 +288,7 @@ class MSH_API {
      * @return array|WP_Error { totals, ctr, cvr, by_intent, top_posts }
      */
     public static function cta_stats() {
-        $cached = get_transient( 'msh_cta_stats' );
+        $cached = get_transient( 'msh_seo_cta_stats' );
         if ( false !== $cached ) {
             return $cached;
         }
@@ -300,9 +300,9 @@ class MSH_API {
         if ( is_wp_error( $result ) ) {
             // Negative-cache briefly so a slow/down API can't stall every
             // Analytics page load.
-            set_transient( 'msh_cta_stats', array(), 10 * MINUTE_IN_SECONDS );
+            set_transient( 'msh_seo_cta_stats', array(), 10 * MINUTE_IN_SECONDS );
         } else {
-            set_transient( 'msh_cta_stats', $result, 15 * MINUTE_IN_SECONDS );
+            set_transient( 'msh_seo_cta_stats', $result, 15 * MINUTE_IN_SECONDS );
         }
 
         return $result;
@@ -315,7 +315,7 @@ class MSH_API {
      * @return array|WP_Error { checked, ai_cited, citation_rate, cited_for, competitors, opportunities }
      */
     public static function ai_visibility() {
-        $cached = get_transient( 'msh_ai_visibility' );
+        $cached = get_transient( 'msh_seo_ai_visibility' );
         if ( false !== $cached ) {
             return $cached;
         }
@@ -325,9 +325,9 @@ class MSH_API {
         ), 8 );
 
         if ( is_wp_error( $result ) ) {
-            set_transient( 'msh_ai_visibility', array(), 10 * MINUTE_IN_SECONDS );
+            set_transient( 'msh_seo_ai_visibility', array(), 10 * MINUTE_IN_SECONDS );
         } else {
-            set_transient( 'msh_ai_visibility', $result, 6 * HOUR_IN_SECONDS );
+            set_transient( 'msh_seo_ai_visibility', $result, 6 * HOUR_IN_SECONDS );
         }
 
         return $result;

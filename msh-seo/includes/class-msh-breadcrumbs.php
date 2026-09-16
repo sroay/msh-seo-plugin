@@ -3,8 +3,8 @@
  * MSH Breadcrumbs
  *
  * Outputs accessible breadcrumb navigation with BreadcrumbList JSON-LD schema.
- * Can be used in theme templates via MSH_Breadcrumbs::render() or via
- * the [msh_breadcrumbs] shortcode.
+ * Can be used in theme templates via MSH_SEO_Breadcrumbs::render() or via
+ * the [msh_seo_breadcrumbs] shortcode.
  *
  * @package MSH_SEO
  * @since   0.1.0
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Breadcrumbs {
+class MSH_SEO_Breadcrumbs {
 
     /**
      * Default arguments for breadcrumb rendering.
@@ -31,48 +31,20 @@ class MSH_Breadcrumbs {
     /**
      * Initialize breadcrumbs functionality.
      *
-     * Registers shortcode and outputs inline CSS on the front end.
+     * Registers the shortcode. The stylesheet is enqueued by render(), so it
+     * loads only on pages that actually show breadcrumbs.
      *
      * @return void
      */
     public static function init() {
-        add_shortcode( 'msh_breadcrumbs', array( __CLASS__, 'shortcode_handler' ) );
-
-        // Output breadcrumb CSS on the front end when needed.
-        add_action( 'wp_head', array( __CLASS__, 'output_inline_css' ), 5 );
-    }
-
-    /**
-     * Output inline CSS for breadcrumb styling.
-     *
-     * Only outputs on pages that are not the front page.
-     *
-     * @return void
-     */
-    public static function output_inline_css() {
-        if ( is_front_page() ) {
-            return;
-        }
-
-        $css = '
-.msh-breadcrumbs { font-size: 14px; color: #666; margin-bottom: 16px; }
-.msh-breadcrumbs a { color: #0073aa; text-decoration: none; }
-.msh-breadcrumbs a:hover { text-decoration: underline; }
-.msh-breadcrumbs .separator { margin: 0 8px; color: #999; }
-.msh-breadcrumbs .current { color: #333; font-weight: 500; }
-';
-
-        echo '<style id="msh-breadcrumbs-css">' . "\n";
-        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo $css;
-        echo '</style>' . "\n";
+        add_shortcode( 'msh_seo_breadcrumbs', array( __CLASS__, 'shortcode_handler' ) );
     }
 
     /**
      * Render breadcrumb navigation with BreadcrumbList schema.
      *
      * Can be called directly in theme templates:
-     *   MSH_Breadcrumbs::render();
+     *   MSH_SEO_Breadcrumbs::render();
      *
      * Supports customization via $args:
      *   - separator:    Separator character (default: >)
@@ -99,6 +71,8 @@ class MSH_Breadcrumbs {
             return '';
         }
 
+        wp_enqueue_style( 'msh-seo-breadcrumbs', MSH_SEO_URL . 'assets/css/breadcrumbs.css', array(), MSH_SEO_VERSION );
+
         $output = '';
 
         // Build HTML.
@@ -109,7 +83,7 @@ class MSH_Breadcrumbs {
             $is_last = ( $index === $last_index );
 
             if ( $index > 0 ) {
-                $output .= '<span class="separator" aria-hidden="true">' . $args['separator'] . '</span>';
+                $output .= '<span class="separator" aria-hidden="true">' . esc_html( $args['separator'] ) . '</span>';
             }
 
             if ( $is_last && $args['show_current'] ) {
@@ -140,11 +114,12 @@ class MSH_Breadcrumbs {
             $schema_item = array(
                 '@type'    => 'ListItem',
                 'position' => $item['position'],
-                'name'     => esc_html( $item['title'] ),
+                // Titles arrive texturized (&#8217;, &#038;); JSON-LD wants the characters.
+                'name'     => html_entity_decode( wp_strip_all_tags( $item['title'] ), ENT_QUOTES, 'UTF-8' ),
             );
 
             if ( ! empty( $item['url'] ) ) {
-                $schema_item['item'] = esc_url( $item['url'] );
+                $schema_item['item'] = esc_url_raw( $item['url'] );
             }
 
             $schema_items[] = $schema_item;
@@ -156,20 +131,19 @@ class MSH_Breadcrumbs {
             'itemListElement' => $schema_items,
         );
 
-        $json = wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+        // JSON_HEX_TAG writes < and > as \u003C and \u003E, so a title that
+        // contains "</script>" cannot end the script element early.
+        $json = wp_json_encode( $schema, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP );
 
         if ( $json ) {
-            $output .= "\n" . '<script type="application/ld+json">';
-            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-            $output .= $json;
-            $output .= '</script>' . "\n";
+            $output .= "\n" . wp_get_inline_script_tag( $json, array( 'type' => 'application/ld+json' ) );
         }
 
         return $output;
     }
 
     /**
-     * Handle the [msh_breadcrumbs] shortcode.
+     * Handle the [msh_seo_breadcrumbs] shortcode.
      *
      * Parses shortcode attributes and returns rendered breadcrumb output.
      *
@@ -188,7 +162,7 @@ class MSH_Breadcrumbs {
             'home_text'    => '',
             'wrap_class'   => '',
             'show_current' => '',
-        ), $atts, 'msh_breadcrumbs' );
+        ), $atts, 'msh_seo_breadcrumbs' );
 
         $args = array();
 

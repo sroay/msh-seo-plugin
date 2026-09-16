@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_WooCommerce {
+class MSH_SEO_WooCommerce {
 
     /**
      * Initialize WooCommerce SEO hooks.
@@ -49,7 +49,7 @@ class MSH_WooCommerce {
         // The other three hooks stay regardless: filter_product_schema refines
         // WooCommerce's OWN output rather than adding a second block, and the
         // GTIN/MPN/Brand fields are data entry, not page output.
-        if ( ! class_exists( 'MSH_Conflicts' ) || MSH_Conflicts::should_output() ) {
+        if ( ! class_exists( 'MSH_SEO_Conflicts' ) || MSH_SEO_Conflicts::should_output() ) {
             add_action( 'wp_head', array( __CLASS__, 'output_product_schema' ), 3 );
         }
     }
@@ -77,17 +77,14 @@ class MSH_WooCommerce {
 
         $output = array_merge( $output, $schema );
 
-        $json = wp_json_encode( $output, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT );
+        // JSON_HEX_TAG keeps product text containing "</script>" inside the element.
+        $json = wp_json_encode( $output, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP );
 
         if ( ! $json ) {
             return;
         }
 
-        echo "\n<!-- MSH SEO: Product Schema -->\n";
-        echo '<script type="application/ld+json">' . "\n";
-        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo $json;
-        echo "\n</script>\n";
+        wp_print_inline_script_tag( $json, array( 'type' => 'application/ld+json' ) );
     }
 
     /**
@@ -99,8 +96,8 @@ class MSH_WooCommerce {
      */
     public static function filter_product_schema( $markup, $product ) {
         // Add GTIN and MPN if available.
-        $gtin = get_post_meta( $product->get_id(), '_msh_product_gtin', true );
-        $mpn  = get_post_meta( $product->get_id(), '_msh_product_mpn', true );
+        $gtin = get_post_meta( $product->get_id(), '_msh_seo_product_gtin', true );
+        $mpn  = get_post_meta( $product->get_id(), '_msh_seo_product_mpn', true );
 
         if ( ! empty( $gtin ) ) {
             $markup['gtin'] = sanitize_text_field( $gtin );
@@ -168,8 +165,8 @@ class MSH_WooCommerce {
         }
 
         // GTIN and MPN from custom meta.
-        $gtin = get_post_meta( $product_id, '_msh_product_gtin', true );
-        $mpn  = get_post_meta( $product_id, '_msh_product_mpn', true );
+        $gtin = get_post_meta( $product_id, '_msh_seo_product_gtin', true );
+        $mpn  = get_post_meta( $product_id, '_msh_seo_product_mpn', true );
 
         if ( ! empty( $gtin ) ) {
             $schema['gtin'] = sanitize_text_field( $gtin );
@@ -370,7 +367,7 @@ class MSH_WooCommerce {
     /**
      * Get the product brand from taxonomy or custom field.
      *
-     * Checks for 'product_brand' taxonomy first, then '_msh_product_brand' meta.
+     * Checks for 'product_brand' taxonomy first, then '_msh_seo_product_brand' meta.
      *
      * @param int $product_id The product ID.
      * @return string Brand name or empty string.
@@ -385,7 +382,7 @@ class MSH_WooCommerce {
         }
 
         // Fall back to custom meta.
-        $brand = get_post_meta( $product_id, '_msh_product_brand', true );
+        $brand = get_post_meta( $product_id, '_msh_seo_product_brand', true );
         return ! empty( $brand ) ? $brand : '';
     }
 
@@ -457,7 +454,7 @@ class MSH_WooCommerce {
 
         $checks      = array();
         $total_score  = 0;
-        $focus_keyword = get_post_meta( $product_id, '_msh_focus_keyword', true );
+        $focus_keyword = get_post_meta( $product_id, '_msh_seo_focus_keyword', true );
 
         // 1. Product title length (30-70 chars optimal) — 10pts.
         $title        = $product->get_name();
@@ -731,7 +728,7 @@ class MSH_WooCommerce {
         echo '<div class="options_group msh-product-fields">';
 
         woocommerce_wp_text_input( array(
-            'id'          => '_msh_product_gtin',
+            'id'          => '_msh_seo_product_gtin',
             'label'       => __( 'GTIN (UPC/EAN/ISBN)', 'msh-seo' ),
             'desc_tip'    => true,
             'description' => __( 'Global Trade Item Number for product identification in search results.', 'msh-seo' ),
@@ -739,7 +736,7 @@ class MSH_WooCommerce {
         ) );
 
         woocommerce_wp_text_input( array(
-            'id'          => '_msh_product_mpn',
+            'id'          => '_msh_seo_product_mpn',
             'label'       => __( 'MPN', 'msh-seo' ),
             'desc_tip'    => true,
             'description' => __( 'Manufacturer Part Number for product identification.', 'msh-seo' ),
@@ -747,7 +744,7 @@ class MSH_WooCommerce {
         ) );
 
         woocommerce_wp_text_input( array(
-            'id'          => '_msh_product_brand',
+            'id'          => '_msh_seo_product_brand',
             'label'       => __( 'Brand', 'msh-seo' ),
             'desc_tip'    => true,
             'description' => __( 'Product brand name. Used in schema markup if no brand taxonomy is set.', 'msh-seo' ),
@@ -781,7 +778,7 @@ class MSH_WooCommerce {
             return;
         }
 
-        $fields = array( '_msh_product_gtin', '_msh_product_mpn', '_msh_product_brand' );
+        $fields = array( '_msh_seo_product_gtin', '_msh_seo_product_mpn', '_msh_seo_product_brand' );
 
         foreach ( $fields as $field ) {
             if ( isset( $_POST[ $field ] ) ) {

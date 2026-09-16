@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class MSH_Conflicts {
+class MSH_SEO_Conflicts {
 
 	/**
 	 * Other SEO plugins that own wp_head output.

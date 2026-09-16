@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_AEO {
+class MSH_SEO_AEO {
 
     /**
      * Local AEO scoring — no API needed.
@@ -198,14 +198,14 @@ class MSH_AEO {
     /**
      * Initialize AEO module.
      *
-     * Note: llms.txt serving is handled by MSH_Crawlers to avoid
+     * Note: llms.txt serving is handled by MSH_SEO_Crawlers to avoid
      * duplicate /llms.txt handlers. This class focuses on AEO analysis.
      *
      * @return void
      */
     public static function init() {
         // AEO analysis is available via REST API and get_aeo_tips().
-        // llms.txt serving is delegated to MSH_Crawlers::init().
+        // llms.txt serving is delegated to MSH_SEO_Crawlers::init().
     }
 
     /**
@@ -491,7 +491,7 @@ class MSH_AEO {
 
         // We check for application/ld+json in the content (unlikely in post body),
         // or rely on whether MSH Schema is generating it. Give credit if schema class exists.
-        $schema_active = class_exists( 'MSH_Schema' );
+        $schema_active = class_exists( 'MSH_SEO_Schema' );
 
         return array(
             'name'  => __( 'Schema Markup', 'msh-seo' ),

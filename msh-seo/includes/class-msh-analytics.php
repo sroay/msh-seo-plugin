@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Analytics {
+class MSH_SEO_Analytics {
 
     /** Cache duration for heavy queries (30 min). */
     const CACHE_TTL = 1800;
@@ -23,13 +23,13 @@ class MSH_Analytics {
      * Wire up AJAX handlers.
      */
     public static function init() {
-        add_action( 'wp_ajax_msh_refresh_analytics',   array( __CLASS__, 'ajax_refresh' ) );
-        add_action( 'wp_ajax_msh_fix_meta_descriptions', array( __CLASS__, 'ajax_fix_meta_descriptions' ) );
-        add_action( 'wp_ajax_msh_fix_image_alt',       array( __CLASS__, 'ajax_fix_image_alt' ) );
-        add_action( 'wp_ajax_msh_bulk_analyze',        array( __CLASS__, 'ajax_bulk_analyze' ) );
-        add_action( 'wp_ajax_msh_create_redirect',     array( __CLASS__, 'ajax_create_redirect' ) );
-        add_action( 'wp_ajax_msh_clear_404_log',       array( __CLASS__, 'ajax_clear_404_log' ) );
-        add_action( 'wp_ajax_msh_run_freshness_scan',  array( __CLASS__, 'ajax_run_freshness_scan' ) );
+        add_action( 'wp_ajax_msh_seo_refresh_analytics',   array( __CLASS__, 'ajax_refresh' ) );
+        add_action( 'wp_ajax_msh_seo_fix_meta_descriptions', array( __CLASS__, 'ajax_fix_meta_descriptions' ) );
+        add_action( 'wp_ajax_msh_seo_fix_image_alt',       array( __CLASS__, 'ajax_fix_image_alt' ) );
+        add_action( 'wp_ajax_msh_seo_bulk_analyze',        array( __CLASS__, 'ajax_bulk_analyze' ) );
+        add_action( 'wp_ajax_msh_seo_create_redirect',     array( __CLASS__, 'ajax_create_redirect' ) );
+        add_action( 'wp_ajax_msh_seo_clear_404_log',       array( __CLASS__, 'ajax_clear_404_log' ) );
+        add_action( 'wp_ajax_msh_seo_run_freshness_scan',  array( __CLASS__, 'ajax_run_freshness_scan' ) );
     }
 
     /**
@@ -38,16 +38,16 @@ class MSH_Analytics {
      * fresh buckets on reload.
      */
     public static function ajax_run_freshness_scan() {
-        check_ajax_referer( 'msh_analytics_nonce', 'nonce' );
+        check_ajax_referer( 'msh_seo_analytics_nonce', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( array( 'message' => 'Permission denied.' ) );
         }
-        if ( ! class_exists( 'MSH_Freshness' ) || ! method_exists( 'MSH_Freshness', 'run_freshness_scan' ) ) {
+        if ( ! class_exists( 'MSH_SEO_Freshness' ) || ! method_exists( 'MSH_SEO_Freshness', 'run_freshness_scan' ) ) {
             wp_send_json_error( array( 'message' => 'Freshness module unavailable.' ) );
         }
-        MSH_Freshness::run_freshness_scan();
-        delete_transient( 'msh_analytics_health' );
-        delete_transient( 'msh_analytics_extended' );
+        MSH_SEO_Freshness::run_freshness_scan();
+        delete_transient( 'msh_seo_analytics_health' );
+        delete_transient( 'msh_seo_analytics_extended' );
         wp_send_json_success( array( 'message' => 'Freshness scan complete.' ) );
     }
 
@@ -79,14 +79,14 @@ class MSH_Analytics {
     }
 
     /**
-     * Count published posts carrying a quotable answer block ([msh_answer] /
+     * Count published posts carrying a quotable answer block ([msh_seo_answer] /
      * .msh-answer) — the unit AI engines cite and Speakable schema targets.
      * Cached 30 minutes.
      *
      * @return int
      */
     private static function count_speakable_posts() {
-        $cached = get_transient( 'msh_speakable_count' );
+        $cached = get_transient( 'msh_seo_speakable_count' );
         if ( false !== $cached ) {
             return (int) $cached;
         }
@@ -94,9 +94,9 @@ class MSH_Analytics {
         $count = (int) $wpdb->get_var(
             "SELECT COUNT(ID) FROM {$wpdb->posts}
              WHERE post_status = 'publish' AND post_type IN ('post','page')
-               AND (post_content LIKE '%msh_answer%' OR post_content LIKE '%msh-answer%')"
+               AND (post_content LIKE '%msh_seo_answer%' OR post_content LIKE '%msh-answer%')"
         );
-        set_transient( 'msh_speakable_count', $count, 30 * MINUTE_IN_SECONDS );
+        set_transient( 'msh_seo_speakable_count', $count, 30 * MINUTE_IN_SECONDS );
         return $count;
     }
 
@@ -108,13 +108,13 @@ class MSH_Analytics {
      * Refresh all analytics caches.
      */
     public static function ajax_refresh() {
-        check_ajax_referer( 'msh_analytics_nonce', 'nonce' );
+        check_ajax_referer( 'msh_seo_analytics_nonce', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( 'Permission denied.' );
         }
-        delete_transient( 'msh_analytics_health' );
-        delete_transient( 'msh_analytics_dashboard' );
-        delete_transient( 'msh_analytics_extended' );
+        delete_transient( 'msh_seo_analytics_health' );
+        delete_transient( 'msh_seo_analytics_dashboard' );
+        delete_transient( 'msh_seo_analytics_extended' );
         wp_send_json_success( array( 'message' => 'Cache cleared.' ) );
     }
 
@@ -122,7 +122,7 @@ class MSH_Analytics {
      * Auto-generate meta descriptions from post content for posts missing them.
      */
     public static function ajax_fix_meta_descriptions() {
-        check_ajax_referer( 'msh_analytics_nonce', 'nonce' );
+        check_ajax_referer( 'msh_seo_analytics_nonce', 'nonce' );
         if ( ! current_user_can( 'edit_posts' ) ) {
             wp_send_json_error( 'Permission denied.' );
         }
@@ -201,8 +201,8 @@ class MSH_Analytics {
             $fixed++;
         }
 
-        delete_transient( 'msh_analytics_health' );
-        delete_transient( 'msh_analytics_extended' );
+        delete_transient( 'msh_seo_analytics_health' );
+        delete_transient( 'msh_seo_analytics_extended' );
 
         wp_send_json_success( array(
             'fixed'     => $fixed,
@@ -215,7 +215,7 @@ class MSH_Analytics {
      * Auto-fix missing alt text on images using filename or post context.
      */
     public static function ajax_fix_image_alt() {
-        check_ajax_referer( 'msh_analytics_nonce', 'nonce' );
+        check_ajax_referer( 'msh_seo_analytics_nonce', 'nonce' );
         if ( ! current_user_can( 'upload_files' ) ) {
             wp_send_json_error( 'Permission denied.' );
         }
@@ -263,7 +263,7 @@ class MSH_Analytics {
             }
         }
 
-        delete_transient( 'msh_analytics_extended' );
+        delete_transient( 'msh_seo_analytics_extended' );
 
         wp_send_json_success( array(
             'fixed'   => $fixed,
@@ -275,7 +275,7 @@ class MSH_Analytics {
      * Bulk-analyze unscored posts.
      */
     public static function ajax_bulk_analyze() {
-        check_ajax_referer( 'msh_analytics_nonce', 'nonce' );
+        check_ajax_referer( 'msh_seo_analytics_nonce', 'nonce' );
         if ( ! current_user_can( 'edit_posts' ) ) {
             wp_send_json_error( 'Permission denied.' );
         }
@@ -295,7 +295,7 @@ class MSH_Analytics {
 
         $analyzed = 0;
         foreach ( $posts as $post ) {
-            $keyword = get_post_meta( $post->ID, '_msh_focus_keyword', true );
+            $keyword = get_post_meta( $post->ID, '_msh_seo_focus_keyword', true );
             $result  = MSH_SEO_Analysis::analyze_post( $post->ID, $keyword ?: '' );
             if ( $result && isset( $result['score'] ) ) {
                 update_post_meta( $post->ID, '_msh_seo_score', (int) $result['score'] );
@@ -303,8 +303,8 @@ class MSH_Analytics {
             }
         }
 
-        delete_transient( 'msh_analytics_health' );
-        delete_transient( 'msh_analytics_extended' );
+        delete_transient( 'msh_seo_analytics_health' );
+        delete_transient( 'msh_seo_analytics_extended' );
 
         wp_send_json_success( array(
             'analyzed' => $analyzed,
@@ -316,7 +316,7 @@ class MSH_Analytics {
      * Create a redirect from a 404 URL.
      */
     public static function ajax_create_redirect() {
-        check_ajax_referer( 'msh_analytics_nonce', 'nonce' );
+        check_ajax_referer( 'msh_seo_analytics_nonce', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( 'Permission denied.' );
         }
@@ -329,7 +329,7 @@ class MSH_Analytics {
         }
 
         global $wpdb;
-        $table = $wpdb->prefix . 'msh_redirects';
+        $table = $wpdb->prefix . 'msh_seo_redirects';
 
         // Delegate to the ONE place that owns this schema.
         //
@@ -343,7 +343,7 @@ class MSH_Analytics {
         //
         // Two code paths creating one table with different schemas is exactly
         // what left the redirect engine dead for a year. One owner now.
-        MSH_Redirects::ensure_schema();
+        MSH_SEO_Redirects::ensure_schema();
 
         $wpdb->replace(
             $table,
@@ -356,10 +356,10 @@ class MSH_Analytics {
         );
 
         // Remove from 404 log.
-        $log_table = $wpdb->prefix . 'msh_404_log';
+        $log_table = $wpdb->prefix . 'msh_seo_404_log';
         $wpdb->delete( $log_table, array( 'url' => $source ), array( '%s' ) );
 
-        delete_transient( 'msh_analytics_extended' );
+        delete_transient( 'msh_seo_analytics_extended' );
 
         wp_send_json_success( array( 'message' => 'Redirect created.' ) );
     }
@@ -368,18 +368,18 @@ class MSH_Analytics {
      * Clear the 404 log.
      */
     public static function ajax_clear_404_log() {
-        check_ajax_referer( 'msh_analytics_nonce', 'nonce' );
+        check_ajax_referer( 'msh_seo_analytics_nonce', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( 'Permission denied.' );
         }
 
         global $wpdb;
-        $table = $wpdb->prefix . 'msh_404_log';
+        $table = $wpdb->prefix . 'msh_seo_404_log';
         if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
-            $wpdb->query( "TRUNCATE TABLE {$table}" );
+            $wpdb->query( $wpdb->prepare( 'TRUNCATE TABLE %i', $table ) );
         }
 
-        delete_transient( 'msh_analytics_extended' );
+        delete_transient( 'msh_seo_analytics_extended' );
         wp_send_json_success( array( 'message' => '404 log cleared.' ) );
     }
 
@@ -391,7 +391,7 @@ class MSH_Analytics {
      * Get core SEO health stats (cached).
      */
     public static function get_seo_health() {
-        $cached = get_transient( 'msh_analytics_health' );
+        $cached = get_transient( 'msh_seo_analytics_health' );
         if ( false !== $cached ) {
             return $cached;
         }
@@ -405,11 +405,12 @@ class MSH_Analytics {
         $ph = implode( ',', array_fill( 0, count( $post_types ), '%s' ) );
 
         // Total counts per type.
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- the interpolated list is only %s placeholders, one per value passed to prepare().
         $counts = $wpdb->get_results( $wpdb->prepare(
             "SELECT post_type, COUNT(*) as cnt FROM {$wpdb->posts} WHERE post_status='publish' AND post_type IN ({$ph}) GROUP BY post_type",
             ...$post_types
         ), OBJECT_K );
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
         $total_posts    = isset( $counts['post'] ) ? (int) $counts['post']->cnt : 0;
         $total_pages    = isset( $counts['page'] ) ? (int) $counts['page']->cnt : 0;
@@ -417,13 +418,14 @@ class MSH_Analytics {
         $total_content  = $total_posts + $total_pages + $total_products;
 
         // SEO scores.
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- the interpolated list is only %s placeholders, one per value passed to prepare().
         $scores = $wpdb->get_col( $wpdb->prepare(
             "SELECT pm.meta_value FROM {$wpdb->postmeta} pm
              INNER JOIN {$wpdb->posts} p ON p.ID=pm.post_id
              WHERE pm.meta_key='_msh_seo_score' AND p.post_status='publish' AND p.post_type IN ({$ph})",
             ...$post_types
         ) );
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
         $score_good = $score_needs_work = $score_poor = $score_sum = 0;
         foreach ( $scores as $v ) {
@@ -439,33 +441,36 @@ class MSH_Analytics {
         $avg_score    = $scored_count > 0 ? round( $score_sum / $scored_count ) : 0;
 
         // Missing meta desc.
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- the interpolated list is only %s placeholders, one per value passed to prepare().
         $has_meta = (int) $wpdb->get_var( $wpdb->prepare(
             "SELECT COUNT(DISTINCT pm.post_id) FROM {$wpdb->postmeta} pm
              INNER JOIN {$wpdb->posts} p ON p.ID=pm.post_id
              WHERE pm.meta_key='_msh_seo_description' AND pm.meta_value!='' AND p.post_status='publish' AND p.post_type IN ({$ph})",
             ...$post_types
         ) );
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
         $missing_meta = $total_content - $has_meta;
 
         // Missing focus keyword.
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- the interpolated list is only %s placeholders, one per value passed to prepare().
         $has_kw = (int) $wpdb->get_var( $wpdb->prepare(
             "SELECT COUNT(DISTINCT pm.post_id) FROM {$wpdb->postmeta} pm
              INNER JOIN {$wpdb->posts} p ON p.ID=pm.post_id
-             WHERE pm.meta_key='_msh_focus_keyword' AND pm.meta_value!='' AND p.post_status='publish' AND p.post_type IN ({$ph})",
+             WHERE pm.meta_key='_msh_seo_focus_keyword' AND pm.meta_value!='' AND p.post_status='publish' AND p.post_type IN ({$ph})",
             ...$post_types
         ) );
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
         $missing_kw = $total_content - $has_kw;
 
         // Noindex count.
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- the interpolated list is only %s placeholders, one per value passed to prepare().
         $noindex = (int) $wpdb->get_var( $wpdb->prepare(
             "SELECT COUNT(DISTINCT pm.post_id) FROM {$wpdb->postmeta} pm
              INNER JOIN {$wpdb->posts} p ON p.ID=pm.post_id
              WHERE pm.meta_key='_msh_seo_noindex' AND pm.meta_value='1' AND p.post_status='publish' AND p.post_type IN ({$ph})",
             ...$post_types
         ) );
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
         $health = array(
             'total_posts'      => $total_posts,
@@ -483,7 +488,7 @@ class MSH_Analytics {
             'noindex'          => $noindex,
         );
 
-        set_transient( 'msh_analytics_health', $health, self::CACHE_TTL );
+        set_transient( 'msh_seo_analytics_health', $health, self::CACHE_TTL );
         return $health;
     }
 
@@ -492,7 +497,7 @@ class MSH_Analytics {
      * Cached separately because these queries are heavier.
      */
     public static function get_extended_data() {
-        $cached = get_transient( 'msh_analytics_extended' );
+        $cached = get_transient( 'msh_seo_analytics_extended' );
         if ( false !== $cached ) {
             return $cached;
         }
@@ -515,26 +520,26 @@ class MSH_Analytics {
         );
 
         // --- 404 log ---
-        $log_table = $wpdb->prefix . 'msh_404_log';
+        $log_table = $wpdb->prefix . 'msh_seo_404_log';
         $data['has_404_table'] = ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $log_table ) ) === $log_table );
         $data['errors_404']    = array();
         $data['total_404']     = 0;
         if ( $data['has_404_table'] ) {
-            $data['total_404'] = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$log_table}" );
+            $data['total_404'] = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $log_table ) );
             $data['errors_404'] = $wpdb->get_results(
-                "SELECT url, hits, referrer, last_hit FROM {$log_table} ORDER BY hits DESC, last_hit DESC LIMIT 10",
+                $wpdb->prepare( 'SELECT url, hits, referrer, last_hit FROM %i ORDER BY hits DESC, last_hit DESC LIMIT 10', $log_table ),
                 ARRAY_A
             );
         }
 
         // --- Redirect stats ---
-        $redir_table = $wpdb->prefix . 'msh_redirects';
+        $redir_table = $wpdb->prefix . 'msh_seo_redirects';
         $data['has_redirect_table'] = ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $redir_table ) ) === $redir_table );
         $data['total_redirects'] = 0;
         $data['redirect_hits']   = 0;
         if ( $data['has_redirect_table'] ) {
-            $data['total_redirects'] = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$redir_table}" );
-            $data['redirect_hits']   = (int) $wpdb->get_var( "SELECT COALESCE(SUM(hits),0) FROM {$redir_table}" );
+            $data['total_redirects'] = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $redir_table ) );
+            $data['redirect_hits']   = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COALESCE(SUM(hits),0) FROM %i', $redir_table ) );
         }
 
         // --- Content depth (word count distribution) ---
@@ -596,7 +601,7 @@ class MSH_Analytics {
         $fresh_scores = $wpdb->get_col(
             "SELECT pm.meta_value FROM {$wpdb->postmeta} pm
              INNER JOIN {$wpdb->posts} p ON p.ID=pm.post_id
-             WHERE pm.meta_key='_msh_freshness_score' AND p.post_status='publish' AND p.post_type='post'"
+             WHERE pm.meta_key='_msh_seo_freshness_score' AND p.post_status='publish' AND p.post_type='post'"
         );
         foreach ( $fresh_scores as $fs ) {
             $v = (int) $fs;
@@ -611,17 +616,17 @@ class MSH_Analytics {
         $data['schema_with'] = (int) $wpdb->get_var(
             "SELECT COUNT(DISTINCT pm.post_id) FROM {$wpdb->postmeta} pm
              INNER JOIN {$wpdb->posts} p ON p.ID=pm.post_id
-             WHERE pm.meta_key='_msh_schema_type' AND pm.meta_value!='' AND pm.meta_value!='none'
+             WHERE pm.meta_key='_msh_seo_schema_type' AND pm.meta_value!='' AND pm.meta_value!='none'
              AND p.post_status='publish'"
         );
 
         // --- AI crawler settings ---
-        $data['crawler_settings'] = get_option( 'msh_crawler_settings', array( 'blocked' => array() ) );
+        $data['crawler_settings'] = get_option( 'msh_seo_crawler_settings', array( 'blocked' => array() ) );
 
         // --- IndexNow ---
         $data['indexnow'] = array();
-        if ( class_exists( 'MSH_Indexing' ) ) {
-            $raw = MSH_Indexing::get_recent_submissions();
+        if ( class_exists( 'MSH_SEO_Indexing' ) ) {
+            $raw = MSH_SEO_Indexing::get_recent_submissions();
             foreach ( $raw as $entry ) {
                 $urls = isset( $entry['urls'] ) && is_array( $entry['urls'] ) ? $entry['urls'] : array();
                 foreach ( $urls as $url ) {
@@ -634,7 +639,7 @@ class MSH_Analytics {
             }
         }
 
-        set_transient( 'msh_analytics_extended', $data, self::CACHE_TTL );
+        set_transient( 'msh_seo_analytics_extended', $data, self::CACHE_TTL );
         return $data;
     }
 
@@ -643,7 +648,7 @@ class MSH_Analytics {
      */
     private static function get_issues( $health, $ext ) {
         $issues = array();
-        $is_connected = class_exists( 'MSH_Auth' ) && MSH_Auth::is_connected();
+        $is_connected = class_exists( 'MSH_SEO_Auth' ) && MSH_SEO_Auth::is_connected();
 
         // Critical issues first.
         if ( $health['no_score'] > 0 ) {
@@ -654,7 +659,7 @@ class MSH_Analytics {
                 'desc'     => 'Unscored content cannot be optimized. Run bulk analysis to score all posts instantly.',
                 'action'   => 'ajax',
                 'btn'      => 'Analyze All Now',
-                'ajax'     => 'msh_bulk_analyze',
+                'ajax'     => 'msh_seo_bulk_analyze',
                 'upgrade'  => '',
             );
         }
@@ -667,7 +672,7 @@ class MSH_Analytics {
                 'desc'     => 'Search engines may show random content for these pages. Auto-fix extracts a clean summary from each post.',
                 'action'   => 'ajax',
                 'btn'      => 'Auto-Generate All',
-                'ajax'     => 'msh_fix_meta_descriptions',
+                'ajax'     => 'msh_seo_fix_meta_descriptions',
                 'upgrade'  => $is_connected ? '' : 'Connect to MSH for AI-powered meta descriptions that convert better.',
             );
         }
@@ -680,7 +685,7 @@ class MSH_Analytics {
                 'desc'     => 'Alt text helps search engines understand images and improves accessibility. Auto-fix derives alt from filenames.',
                 'action'   => 'ajax',
                 'btn'      => 'Auto-Fix Alt Text',
-                'ajax'     => 'msh_fix_image_alt',
+                'ajax'     => 'msh_seo_fix_image_alt',
                 'upgrade'  => $is_connected ? '' : 'Connect to MSH for AI-powered alt text that describes images accurately.',
             );
         }
@@ -745,7 +750,7 @@ class MSH_Analytics {
                 'desc'     => 'Content older than 6 months with outdated references loses ranking over time.',
                 'action'   => 'link',
                 'btn'      => 'View Stale Posts',
-                'url'      => admin_url( 'edit.php?orderby=msh_freshness&order=asc' ),
+                'url'      => admin_url( 'edit.php?orderby=msh_seo_freshness&order=asc' ),
                 'upgrade'  => $is_connected ? '' : 'Connect to MSH Autopilot for automatic content refreshing.',
             );
         }
@@ -845,8 +850,8 @@ class MSH_Analytics {
         $ext          = self::get_extended_data();
         $site_score   = self::calculate_site_score( $health, $ext );
         $issues       = self::get_issues( $health, $ext );
-        $is_connected = class_exists( 'MSH_Auth' ) && MSH_Auth::is_connected();
-        $nonce        = wp_create_nonce( 'msh_analytics_nonce' );
+        $is_connected = class_exists( 'MSH_SEO_Auth' ) && MSH_SEO_Auth::is_connected();
+        $nonce        = wp_create_nonce( 'msh_seo_analytics_nonce' );
         $history      = self::update_score_history( $site_score );
         $speakable    = self::count_speakable_posts();
 
@@ -855,10 +860,10 @@ class MSH_Analytics {
         $ai_vis    = null;
         $cta_stats = null;
         $growth    = null;
-        if ( $is_connected && class_exists( 'MSH_API' ) ) {
-            $ai  = MSH_API::ai_visibility();
-            $cta = MSH_API::cta_stats();
-            $gr  = MSH_API::growth_summary();
+        if ( $is_connected && class_exists( 'MSH_SEO_API' ) ) {
+            $ai  = MSH_SEO_API::ai_visibility();
+            $cta = MSH_SEO_API::cta_stats();
+            $gr  = MSH_SEO_API::growth_summary();
             if ( ! is_wp_error( $ai ) && is_array( $ai ) && isset( $ai['checked'] ) ) {
                 $ai_vis = $ai;
             }
@@ -876,7 +881,6 @@ class MSH_Analytics {
         elseif ( $site_score >= 40 )  { $score_color = '#d97706'; $score_label = 'Needs Work'; }
         else                          { $score_color = '#dc2626'; $score_label = 'Critical'; }
 
-        self::render_styles();
         ?>
         <div class="wrap msh-command-center">
 
@@ -1104,8 +1108,8 @@ class MSH_Analytics {
                 <div class="msh-card">
                     <h3><span class="dashicons dashicons-rss"></span> Indexing Pulse</h3>
                     <?php
-                    $idx_recent  = class_exists( 'MSH_Indexing' ) ? MSH_Indexing::get_recent_submissions() : array();
-                    $idx_gstatus = class_exists( 'MSH_Indexing' ) ? MSH_Indexing::google_status() : 'off';
+                    $idx_recent  = class_exists( 'MSH_SEO_Indexing' ) ? MSH_SEO_Indexing::get_recent_submissions() : array();
+                    $idx_gstatus = class_exists( 'MSH_SEO_Indexing' ) ? MSH_SEO_Indexing::google_status() : 'off';
                     if ( 'local' === $idx_gstatus ) {
                         $idx_glabel = 'Google API on';
                     } elseif ( 'central' === $idx_gstatus ) {
@@ -1207,7 +1211,7 @@ class MSH_Analytics {
                         <p class="msh-muted">No freshness data yet &mdash; run your first scan.</p>
                     <?php endif; ?>
                     <p style="margin:10px 0 0;">
-                        <button type="button" class="button button-small msh-action-btn" data-ajax="msh_run_freshness_scan" data-nonce="<?php echo esc_attr( $nonce ); ?>">Scan now</button>
+                        <button type="button" class="button button-small msh-action-btn" data-ajax="msh_seo_run_freshness_scan" data-nonce="<?php echo esc_attr( $nonce ); ?>">Scan now</button>
                     </p>
                 </div>
                 <div class="msh-card">
@@ -1326,7 +1330,7 @@ class MSH_Analytics {
             <?php if ( $ext['total_404'] > 10 ) : ?>
                 <p style="margin-top:8px;">
                     <a href="<?php echo esc_url( admin_url( 'admin.php?page=msh-seo-redirects' ) ); ?>" class="button">View All <?php echo esc_html( $ext['total_404'] ); ?> Errors</a>
-                    <button type="button" class="button msh-action-btn" data-ajax="msh_clear_404_log" data-nonce="<?php echo esc_attr( $nonce ); ?>" style="margin-left:8px;color:#dc2626;">Clear 404 Log</button>
+                    <button type="button" class="button msh-action-btn" data-ajax="msh_seo_clear_404_log" data-nonce="<?php echo esc_attr( $nonce ); ?>" style="margin-left:8px;color:#dc2626;">Clear 404 Log</button>
                 </p>
             <?php endif; ?>
             <?php elseif ( $ext['has_404_table'] ) : ?>
@@ -1438,7 +1442,6 @@ class MSH_Analytics {
 
         </div><!-- .msh-command-center -->
 
-        <?php self::render_scripts( $nonce ); ?>
         <?php
     }
 
@@ -1450,7 +1453,7 @@ class MSH_Analytics {
      * "Your Growth" — the real Google-traffic story from MSH: impressions/clicks
      * trend, 28-day deltas, keywords ranking, and content the engine published.
      *
-     * @param array $g Growth summary payload from MSH_API::growth_summary().
+     * @param array $g Growth summary payload from MSH_SEO_API::growth_summary().
      */
     private static function render_growth_section( $g ) {
         $totals   = isset( $g['totals'] ) ? $g['totals'] : array();
@@ -1600,293 +1603,4 @@ class MSH_Analytics {
         echo '</div>';
     }
 
-    /* ==================================================================
-     * CSS
-     * ================================================================*/
-
-    private static function render_styles() {
-        ?>
-        <style>
-        .msh-command-center { max-width: 1200px; }
-        .msh-hero {
-            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
-            background: linear-gradient(135deg, #ff5c8a 0%, #ff7a5c 55%, #ff9a3c 100%);
-            color: #fff; padding: 28px 32px; border-radius: 16px; margin-bottom: 20px;
-            box-shadow: 0 8px 24px rgba(255, 92, 138, 0.25);
-        }
-        .msh-hero, .msh-hero h1, .msh-hero h2, .msh-hero span { color: #fff !important; }
-        .msh-hero p { color: #fff; }
-        .msh-hero .msh-score-label { text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
-        .msh-hero-score { display: flex; align-items: center; gap: 24px; }
-        .msh-score-ring {
-            width: 90px; height: 90px; border-radius: 50%; position: relative;
-            background: conic-gradient(var(--color) calc(var(--score) * 3.6deg), rgba(255,255,255,0.35) 0);
-            display: flex; align-items: center; justify-content: center;
-        }
-        .msh-score-ring::before {
-            content: ''; position: absolute; width: 72px; height: 72px; border-radius: 50%;
-            background: #fff;
-        }
-        .msh-hero .msh-score-number { position: relative; z-index: 1; font-size: 28px; font-weight: 800; color: var(--color, #1e293b) !important; }
-        .msh-score-meta { display: flex; flex-direction: column; }
-        .msh-score-label { font-size: 18px; font-weight: 700; margin: 2px 0 0; }
-        .msh-score-sub { color: rgba(255,255,255,0.7) !important; font-size: 13px; margin: 2px 0 0; }
-        .msh-hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-        .msh-hero-actions .button { border-color: rgba(255,255,255,0.5) !important; color: #fff !important; background: rgba(255,255,255,0.1) !important; }
-        .msh-hero-actions .button:hover { border-color: #fff !important; background: rgba(255,255,255,0.2) !important; color: #fff !important; }
-        .msh-hero-actions .button .dashicons { color: #fff !important; }
-        .msh-hero-actions .button-primary { background: #fff !important; border-color: #fff !important; color: #d63c68 !important; font-weight: 600; }
-        .msh-hero-actions .button-primary:hover { background: #fff0f4 !important; color: #b82d55 !important; }
-        .msh-stats-bar {
-            display: flex; flex-wrap: wrap; gap: 0; background: #fff;
-            border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 24px; overflow: hidden;
-        }
-        .msh-stat { flex: 1; min-width: 100px; text-align: center; padding: 16px 12px; border-right: 1px solid #f1f5f9; }
-        .msh-stat:last-child { border-right: none; }
-        .msh-stat-num { display: block; font-size: 24px; font-weight: 700; color: #1e293b; line-height: 1.2; }
-        .msh-stat-label { display: block; font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-        .msh-section { margin-bottom: 28px; }
-        .msh-section h2 { display: flex; align-items: center; gap: 8px; font-size: 17px; margin-bottom: 12px; }
-        .msh-section h2 .dashicons { font-size: 20px; }
-        .msh-grid { display: grid; gap: 16px; }
-        .msh-grid--4 { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
-        .msh-grid--3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-        .msh-grid--2 { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
-        .msh-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; }
-        .msh-card h3 { margin: 0 0 12px; font-size: 14px; display: flex; align-items: center; gap: 6px; }
-        .msh-card h3 .dashicons { font-size: 16px; color: #6366f1; }
-        .msh-card-footer { font-size: 11px; color: #94a3b8; margin: 10px 0 0; }
-        .msh-issues-list { display: flex; flex-direction: column; gap: 8px; }
-        .msh-issue {
-            display: flex; align-items: center; gap: 14px; background: #fff;
-            border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px;
-            border-left: 4px solid #94a3b8;
-        }
-        .msh-issue--critical { border-left-color: #dc2626; }
-        .msh-issue--warning  { border-left-color: #d97706; }
-        .msh-issue--info     { border-left-color: #3b82f6; }
-        .msh-issue-icon .dashicons { font-size: 22px; color: #64748b; }
-        .msh-issue--critical .msh-issue-icon .dashicons { color: #dc2626; }
-        .msh-issue--warning .msh-issue-icon .dashicons  { color: #d97706; }
-        .msh-issue--info .msh-issue-icon .dashicons      { color: #3b82f6; }
-        .msh-issue-body { flex: 1; }
-        .msh-issue-body p { margin: 4px 0 0; font-size: 12px; color: #64748b; }
-        .msh-issue-action { flex-shrink: 0; }
-        .msh-upgrade-hint { margin: 6px 0 0; font-size: 11px; color: #7c3aed; display: flex; align-items: center; gap: 4px; }
-        .msh-upgrade-hint .dashicons { font-size: 13px; width: 13px; height: 13px; }
-        .msh-kv-list { display: flex; flex-direction: column; gap: 6px; }
-        .msh-kv { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 4px 0; border-bottom: 1px solid #f8fafc; }
-        .msh-kv:last-child { border-bottom: none; }
-        .msh-mini-bars { display: flex; flex-direction: column; gap: 8px; }
-        .msh-mini-bar-row { display: flex; align-items: center; gap: 8px; }
-        .msh-mini-bar-label { min-width: 100px; font-size: 12px; color: #475569; }
-        .msh-mini-bar-track { flex: 1; height: 18px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
-        .msh-mini-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
-        .msh-mini-bar-val { min-width: 28px; text-align: right; font-size: 12px; font-weight: 700; color: #1e293b; }
-        .msh-progress-wrap { margin-bottom: 4px; }
-        .msh-progress-bar { height: 10px; background: #f1f5f9; border-radius: 5px; overflow: hidden; margin-bottom: 6px; }
-        .msh-progress-fill { height: 100%; border-radius: 5px; transition: width 0.4s ease; }
-        .msh-table { border-radius: 8px; overflow: hidden; }
-        .msh-url-cell { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace; font-size: 12px; }
-        .msh-redirect-target { font-size: 12px !important; }
-        .msh-crawler-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-        .msh-crawler-item { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 0; }
-        .msh-crawler-status { font-weight: 700; font-size: 14px; }
-        .msh-crawler-name { flex: 1; }
-        .msh-crawler-badge { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
-        .msh-crawler-badge--allowed { background: #dcfce7; color: #166534; }
-        .msh-crawler-badge--blocked { background: #fee2e2; color: #991b1b; }
-        .msh-upgrade-box {
-            display: flex; align-items: flex-start; gap: 10px; margin-top: 14px;
-            background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 12px;
-        }
-        .msh-upgrade-box .dashicons { color: #7c3aed; font-size: 20px; margin-top: 2px; }
-        .msh-upgrade-box strong { display: block; margin-bottom: 2px; }
-        .msh-upgrade-box p { font-size: 12px; color: #6b21a8; margin: 0 0 8px; }
-        .msh-upgrade-banner {
-            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
-            border-radius: 12px; padding: 32px 36px; color: #fff; margin-top: 8px;
-        }
-        .msh-upgrade-banner-content { max-width: 600px; }
-        .msh-upgrade-banner h2 { color: #fff; margin: 0 0 8px; font-size: 20px; }
-        .msh-upgrade-banner p { color: rgba(255,255,255,0.9); margin: 0 0 12px; }
-        .msh-upgrade-banner ul { margin: 0 0 8px; padding: 0; list-style: none; }
-        .msh-upgrade-banner li { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 14px; }
-        .msh-upgrade-banner li .dashicons { color: #a5f3fc; }
-        .msh-upgrade-banner .button-hero { background: #fff !important; color: #7c3aed !important; border: none !important; font-weight: 700; }
-        .msh-upgrade-banner .button-hero:hover { background: #f5f3ff !important; }
-        .msh-muted { color: #94a3b8; font-size: 13px; font-style: italic; }
-        .msh-action-btn.msh-done { background: #16a34a !important; border-color: #16a34a !important; color: #fff !important; }
-        /* — Score trend sparkline — */
-        .msh-trend-card { margin-bottom: 24px; padding: 18px 20px 14px; }
-        .msh-trend-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .msh-trend-head h3 { margin: 0; font-size: 14px; display: flex; align-items: center; gap: 6px; }
-        .msh-trend-head h3 .dashicons { color: #ff5c8a; font-size: 16px; }
-        .msh-trend-delta { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 9999px; }
-        .msh-trend-delta--up { background: #dcfce7; color: #166534; }
-        .msh-trend-delta--down { background: #fee2e2; color: #991b1b; }
-        .msh-trend-range { font-weight: 400; color: inherit; opacity: 0.75; font-size: 11px; }
-        .msh-trend-svg { width: 100%; height: 130px; display: block; }
-        .msh-trend-grid { stroke: #f1f5f9; stroke-width: 1; }
-        .msh-trend-axis { display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-top: 2px; }
-        /* — Growth Engine — */
-        .msh-live-pill {
-            font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #fff;
-            background: linear-gradient(135deg, #ff5c8a, #ff9a3c); padding: 2px 9px; border-radius: 9999px;
-        }
-        .msh-donut-row { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
-        .msh-donut { width: 84px; height: 84px; flex-shrink: 0; }
-        .msh-donut-num { font-size: 9.5px; font-weight: 800; fill: #1e293b; }
-        .msh-donut-meta { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
-        .msh-muted-sm { color: #94a3b8; font-size: 11px; }
-        .msh-chip-label { margin: 10px 0 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; }
-        .msh-chips-row { display: flex; flex-wrap: wrap; gap: 5px; }
-        .msh-pill {
-            display: inline-block; font-size: 11px; padding: 2px 9px; border-radius: 9999px;
-            background: #f1f5f9; color: #475569; font-weight: 500; max-width: 100%;
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-        }
-        .msh-pill--good { background: #dcfce7; color: #166534; }
-        .msh-pill--brand { background: #ffe4ec; color: #be185d; font-weight: 700; }
-        .msh-funnel { display: flex; flex-direction: column; gap: 8px; }
-        .msh-funnel-row { display: flex; align-items: center; gap: 8px; }
-        .msh-funnel-label { min-width: 68px; font-size: 12px; color: #475569; }
-        .msh-funnel-track { flex: 1; height: 20px; background: #f8fafc; border-radius: 5px; overflow: hidden; }
-        .msh-funnel-bar { height: 100%; border-radius: 5px; background: linear-gradient(90deg, #ff5c8a, #ff9a3c); transition: width 0.4s ease; }
-        .msh-funnel-bar--mid { opacity: 0.8; }
-        .msh-funnel-bar--deep { opacity: 0.6; }
-        .msh-funnel-val { min-width: 48px; text-align: right; font-size: 12px; }
-        .msh-idx-url { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace; font-size: 11px; }
-        /* — Your Growth — */
-        .msh-metric-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 2px; }
-        .msh-metric-card__label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: .03em; }
-        .msh-metric-card__value { font-size: 30px; font-weight: 800; color: #0f172a; line-height: 1.05; }
-        .msh-metric-card__sub { font-size: 11px; color: #94a3b8; }
-        .msh-delta { align-self: flex-start; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; margin-top: 2px; }
-        .msh-delta--up { background: #dcfce7; color: #166534; }
-        .msh-delta--down { background: #fee2e2; color: #991b1b; }
-        .msh-delta--flat { background: #f1f5f9; color: #64748b; }
-        .msh-growth-svg { width: 100%; height: 145px; display: block; }
-        .msh-kw-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .msh-kw-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; color: #94a3b8; padding: 6px 8px; border-bottom: 1px solid #e2e8f0; }
-        .msh-kw-table th:not(:first-child), .msh-kw-table td:not(:first-child) { text-align: right; width: 90px; }
-        .msh-kw-table td { padding: 8px; border-bottom: 1px solid #f1f5f9; }
-        .msh-kw-table tr:last-child td { border-bottom: none; }
-        .msh-kw-name { font-weight: 600; color: #1e293b; max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        @media (max-width: 782px) {
-            .msh-hero { flex-direction: column; text-align: center; }
-            .msh-hero-score { flex-direction: column; }
-            .msh-stats-bar { flex-direction: column; }
-            .msh-stat { border-right: none; border-bottom: 1px solid #f1f5f9; }
-            .msh-grid--4, .msh-grid--3, .msh-grid--2 { grid-template-columns: 1fr; }
-            .msh-issue { flex-direction: column; align-items: flex-start; }
-            .msh-crawler-grid { grid-template-columns: 1fr; }
-        }
-        </style>
-        <?php
-    }
-
-    /* ==================================================================
-     * JavaScript — AJAX auto-fix handlers
-     * ================================================================*/
-
-    private static function render_scripts( $nonce ) {
-        ?>
-        <script>
-        (function() {
-            var ajaxUrl = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
-            var nonce   = '<?php echo esc_js( $nonce ); ?>';
-
-            // Refresh button.
-            var refreshBtn = document.getElementById('msh-refresh-btn');
-            if (refreshBtn) {
-                refreshBtn.addEventListener('click', function() {
-                    refreshBtn.disabled = true;
-                    refreshBtn.textContent = 'Refreshing...';
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('POST', ajaxUrl);
-                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                    xhr.onload = function() { location.reload(); };
-                    xhr.onerror = function() { location.reload(); };
-                    xhr.send('action=msh_refresh_analytics&nonce=' + nonce);
-                });
-            }
-
-            // Auto-fix action buttons.
-            document.querySelectorAll('.msh-action-btn').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    var action = btn.getAttribute('data-ajax');
-                    var btnNonce = btn.getAttribute('data-nonce') || nonce;
-                    var origText = btn.textContent;
-
-                    btn.disabled = true;
-                    btn.textContent = 'Working...';
-
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('POST', ajaxUrl);
-                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                    xhr.onload = function() {
-                        try {
-                            var resp = JSON.parse(xhr.responseText);
-                            if (resp.success) {
-                                btn.textContent = resp.data.message || 'Done!';
-                                btn.classList.add('msh-done');
-                                setTimeout(function() { location.reload(); }, 1500);
-                            } else {
-                                btn.textContent = resp.data || 'Error';
-                                btn.disabled = false;
-                                setTimeout(function() { btn.textContent = origText; }, 3000);
-                            }
-                        } catch (e) {
-                            btn.textContent = 'Error';
-                            btn.disabled = false;
-                        }
-                    };
-                    xhr.onerror = function() {
-                        btn.textContent = 'Network error';
-                        btn.disabled = false;
-                    };
-                    xhr.send('action=' + action + '&nonce=' + btnNonce);
-                });
-            });
-
-            // 404 redirect create buttons.
-            document.querySelectorAll('.msh-create-redirect').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    var row = btn.closest('tr');
-                    var source = btn.getAttribute('data-source');
-                    var target = row.querySelector('.msh-redirect-target').value;
-                    var btnNonce = btn.getAttribute('data-nonce') || nonce;
-
-                    if (!target) { alert('Please enter a target URL.'); return; }
-
-                    btn.disabled = true;
-                    btn.textContent = 'Creating...';
-
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('POST', ajaxUrl);
-                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                    xhr.onload = function() {
-                        try {
-                            var resp = JSON.parse(xhr.responseText);
-                            if (resp.success) {
-                                btn.textContent = 'Created!';
-                                btn.classList.add('msh-done');
-                                row.style.opacity = '0.5';
-                            } else {
-                                btn.textContent = resp.data || 'Error';
-                                btn.disabled = false;
-                            }
-                        } catch (e) {
-                            btn.textContent = 'Error';
-                            btn.disabled = false;
-                        }
-                    };
-                    xhr.send('action=msh_create_redirect&nonce=' + btnNonce + '&source=' + encodeURIComponent(source) + '&target=' + encodeURIComponent(target));
-                });
-            });
-        })();
-        </script>
-        <?php
-    }
 }

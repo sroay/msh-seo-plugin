@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Schema {
+class MSH_SEO_Schema {
 
     /**
      * Register wp_head hook at priority 2 (after meta tags at priority 1).
@@ -33,10 +33,10 @@ class MSH_Schema {
      */
     public static function output_schema() {
         // If WooCommerce Product page, delegate to Product schema
-        if ( function_exists( 'is_product' ) && is_product() && class_exists( 'MSH_WooCommerce' ) ) {
-            $product_schema = MSH_WooCommerce::get_product_schema( get_the_ID() );
+        if ( function_exists( 'is_product' ) && is_product() && class_exists( 'MSH_SEO_WooCommerce' ) ) {
+            $product_schema = MSH_SEO_WooCommerce::get_product_schema( get_the_ID() );
             if ( $product_schema ) {
-                echo '<script type="application/ld+json">' . wp_json_encode( $product_schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . '</script>';
+                wp_print_inline_script_tag( wp_json_encode( $product_schema, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP ), array( 'type' => 'application/ld+json' ) );
                 return;
             }
         }
@@ -83,25 +83,22 @@ class MSH_Schema {
             '@graph'   => array_values( $graph ),
         );
 
-        $json = wp_json_encode( $output, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT );
+        // JSON_HEX_TAG writes < and > as \u003C and \u003E, so a post title or
+        // excerpt that contains "</script>" cannot end the script element early.
+        $json = wp_json_encode( $output, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP );
 
         if ( ! $json ) {
             return;
         }
 
-        echo "\n<!-- MSH SEO: Schema Markup -->\n";
-        echo '<script type="application/ld+json">' . "\n";
-        // JSON-LD is not HTML — it must not be entity-escaped.
-        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo $json;
-        echo "\n</script>\n";
+        wp_print_inline_script_tag( $json, array( 'type' => 'application/ld+json' ) );
     }
 
     /**
      * Determine schema types for a single post or page.
      *
      * Priority:
-     *  1. User-chosen _msh_schema_type override.
+     *  1. User-chosen _msh_seo_schema_type override.
      *  2. Auto-detect FAQ patterns  -> FAQPage
      *  3. Auto-detect HowTo patterns -> HowTo
      *  4. Default Article / BlogPosting.
@@ -114,7 +111,7 @@ class MSH_Schema {
         $content = $post->post_content;
 
         // Check for user override.
-        $override = get_post_meta( $post->ID, '_msh_schema_type', true );
+        $override = get_post_meta( $post->ID, '_msh_seo_schema_type', true );
 
         if ( 'faq' === $override ) {
             $faq = self::get_faq_schema( $post );
@@ -246,7 +243,7 @@ class MSH_Schema {
         // NOTE: JSON-LD is not an HTML context — wp_json_encode() handles all
         // escaping. esc_html() here would bake literal entities (&amp;) into
         // the values answer engines read.
-        $focus_keyword = get_post_meta( $post->ID, '_msh_focus_keyword', true );
+        $focus_keyword = get_post_meta( $post->ID, '_msh_seo_focus_keyword', true );
         if ( ! empty( $focus_keyword ) ) {
             $clean_kw           = wp_strip_all_tags( (string) $focus_keyword );
             $schema['about']    = array(
@@ -257,9 +254,9 @@ class MSH_Schema {
         }
 
         // AEO: Speakable — point voice/answer engines at the quotable answer
-        // block, but only when the post actually contains one ([msh_answer]
+        // block, but only when the post actually contains one ([msh_seo_answer]
         // shortcode, the msh-seo/answer block, or raw .msh-answer markup).
-        if ( false !== strpos( $post->post_content, 'msh_answer' ) || false !== strpos( $post->post_content, 'msh-answer' ) || false !== strpos( $post->post_content, 'msh-seo/answer' ) ) {
+        if ( false !== strpos( $post->post_content, 'msh_seo_answer' ) || false !== strpos( $post->post_content, 'msh-answer' ) || false !== strpos( $post->post_content, 'msh-seo/answer' ) ) {
             $schema['speakable'] = array(
                 '@type'       => 'SpeakableSpecification',
                 'cssSelector' => array( '.msh-answer' ),

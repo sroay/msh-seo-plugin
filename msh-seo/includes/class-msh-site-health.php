@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class MSH_Site_Health {
+class MSH_SEO_Site_Health {
 
 	public static function init() {
 		add_filter( 'site_status_tests', array( __CLASS__, 'register_tests' ) );
@@ -65,7 +65,7 @@ class MSH_Site_Health {
 	 * Health panel teaches people to ignore it.
 	 */
 	public static function test_connection() {
-		if ( MSH_Auth::is_connected() ) {
+		if ( MSH_SEO_Auth::is_connected() ) {
 			return self::result(
 				__( 'MSH SEO is connected', 'msh-seo' ),
 				'good',
@@ -89,7 +89,7 @@ class MSH_Site_Health {
 	 */
 	public static function test_redirects() {
 		global $wpdb;
-		$table  = $wpdb->prefix . 'msh_redirects';
+		$table  = $wpdb->prefix . 'msh_seo_redirects';
 		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table;
 
 		if ( ! $exists ) {
@@ -101,18 +101,18 @@ class MSH_Site_Health {
 			);
 		}
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- name from $wpdb->prefix
-		$rules    = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
-		$log      = $wpdb->prefix . 'msh_404_log';
+		$rules    = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table ) );
+		$log      = $wpdb->prefix . 'msh_seo_404_log';
 		$uncaught = 0;
 
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $log ) ) === $log ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- names from $wpdb->prefix
 			$uncaught = (int) $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT COALESCE(SUM(l.hits),0) FROM {$log} l
-					   LEFT JOIN {$table} r ON r.source_url = l.url
-					  WHERE r.id IS NULL AND l.last_hit >= %s",
+					'SELECT COALESCE(SUM(l.hits),0) FROM %i l
+					   LEFT JOIN %i r ON r.source_url = l.url
+					  WHERE r.id IS NULL AND l.last_hit >= %s',
+					$log,
+					$table,
 					gmdate( 'Y-m-d H:i:s', time() - DAY_IN_SECONDS )
 				)
 			);
@@ -145,7 +145,7 @@ class MSH_Site_Health {
 	}
 
 	public static function test_conflict() {
-		if ( ! MSH_Conflicts::has_conflict() ) {
+		if ( ! MSH_SEO_Conflicts::has_conflict() ) {
 			return self::result(
 				__( 'No SEO plugin conflicts', 'msh-seo' ),
 				'good',
@@ -160,7 +160,7 @@ class MSH_Site_Health {
 			sprintf(
 				/* translators: %s: names of the other SEO plugins found. */
 				esc_html__( '%s is active, so MSH SEO has stepped back from meta tags, schema and sitemaps to avoid duplicating them. Its redirects, broken-link repair, health checks and AI tools all still run.', 'msh-seo' ),
-				esc_html( implode( ', ', MSH_Conflicts::detected() ) )
+				esc_html( implode( ', ', MSH_SEO_Conflicts::detected() ) )
 			)
 		);
 	}
@@ -172,8 +172,8 @@ class MSH_Site_Health {
 	public static function debug_information( $info ) {
 		global $wpdb;
 
-		$last  = get_option( 'msh_beacon_last_result', array() );
-		$table = $wpdb->prefix . 'msh_redirects';
+		$last  = get_option( 'msh_seo_beacon_last_result', array() );
+		$table = $wpdb->prefix . 'msh_seo_redirects';
 		$next  = wp_next_scheduled( 'msh_seo_health_beacon' );
 
 		$info['msh-seo'] = array(
@@ -185,12 +185,12 @@ class MSH_Site_Health {
 				),
 				'connected'      => array(
 					'label' => __( 'Connected to Marketing So High', 'msh-seo' ),
-					'value' => MSH_Auth::is_connected() ? __( 'Yes', 'msh-seo' ) : __( 'No', 'msh-seo' ),
+					'value' => MSH_SEO_Auth::is_connected() ? __( 'Yes', 'msh-seo' ) : __( 'No', 'msh-seo' ),
 				),
 				'conflicts'      => array(
 					'label' => __( 'Other SEO plugins detected', 'msh-seo' ),
-					'value' => MSH_Conflicts::has_conflict()
-						? implode( ', ', MSH_Conflicts::detected() )
+					'value' => MSH_SEO_Conflicts::has_conflict()
+						? implode( ', ', MSH_SEO_Conflicts::detected() )
 						: __( 'None', 'msh-seo' ),
 				),
 				'redirect_table' => array(

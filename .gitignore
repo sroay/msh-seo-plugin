@@ -1,7 +1,8 @@
 # Dev-only. The plugin ships from create-zip.js, which excludes these too.
 node_modules/
 msh-seo/node_modules/
-msh-seo/src/
+# msh-seo/src/ is tracked: it is the human-readable source of build/index.js,
+# and WordPress.org requires that source to be public.
 package-lock.json
 
 # Built artefacts. The distributable is dashboard/public/msh-seo-plugin.zip,

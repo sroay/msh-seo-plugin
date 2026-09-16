@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Redirects {
+class MSH_SEO_Redirects {
 
     /**
      * Create the plugin's tables.
@@ -22,12 +22,12 @@ class MSH_Redirects {
      *
      *     preg_match( '|CREATE TABLE ([^ ]*)|', $qry, $matches )
      *
-     * Against "CREATE TABLE IF NOT EXISTS wp_msh_redirects" that captures IF,
+     * Against "CREATE TABLE IF NOT EXISTS wp_msh_seo_redirects" that captures IF,
      * not the table. Both statements therefore keyed on "IF", the second
      * overwrote the first in the array, and only the 404 log was ever created.
      * Silently: dbDelta returns normally and reports nothing.
      *
-     * The consequence ran for the life of the plugin. wp_msh_redirects did not
+     * The consequence ran for the life of the plugin. wp_msh_seo_redirects did not
      * exist, so no redirect could be stored, so 2,173 hits piled up in the 404
      * log with the tool to fix them sitting one table away. dbDelta handles
      * "already exists" by itself, which is what IF NOT EXISTS was reaching for.
@@ -38,7 +38,7 @@ class MSH_Redirects {
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-        dbDelta( "CREATE TABLE {$wpdb->prefix}msh_redirects (
+        dbDelta( "CREATE TABLE {$wpdb->prefix}msh_seo_redirects (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             source_url VARCHAR(500) NOT NULL,
             target_url VARCHAR(500) NOT NULL,
@@ -51,7 +51,7 @@ class MSH_Redirects {
             UNIQUE KEY source_url (source_url(191))
         ) {$charset_collate};" );
 
-        dbDelta( "CREATE TABLE {$wpdb->prefix}msh_404_log (
+        dbDelta( "CREATE TABLE {$wpdb->prefix}msh_seo_404_log (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             url VARCHAR(500) NOT NULL,
             referrer VARCHAR(500) DEFAULT '',
@@ -82,12 +82,14 @@ class MSH_Redirects {
     public static function ensure_schema() {
         global $wpdb;
 
+        MSH_SEO_Upgrade::maybe_run();
+
         if ( get_transient( 'msh_seo_schema_ok' ) === MSH_SEO_VERSION ) {
             return;
         }
 
         $missing = array();
-        foreach ( array( 'msh_redirects', 'msh_404_log' ) as $suffix ) {
+        foreach ( array( 'msh_seo_redirects', 'msh_seo_404_log' ) as $suffix ) {
             $table = $wpdb->prefix . $suffix;
             // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- name from $wpdb->prefix
             $found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
@@ -150,7 +152,7 @@ class MSH_Redirects {
             return;
         }
         global $wpdb;
-        $table   = $wpdb->prefix . 'msh_redirects';
+        $table   = $wpdb->prefix . 'msh_seo_redirects';
         $request = esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) );
         if ( empty( $request ) ) return;
 
@@ -191,19 +193,19 @@ class MSH_Redirects {
          * exactly the ones bypassing every redirect. Trying the full URI first
          * keeps it possible to author a rule that depends on the query.
          */
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- table from $wpdb->prefix
         // Most specific first: the full URI, then the path, then the path with
         // the subfolder prefix removed. '' never matches a stored source, so
         // the third slot is inert on a root install.
         $redirect = $wpdb->get_row( $wpdb->prepare(
-            "SELECT id, source_url, target_url, redirect_type FROM {$table}
+            'SELECT id, source_url, target_url, redirect_type FROM %i
               WHERE source_url IN ( %s, %s, %s )
            ORDER BY CASE
                       WHEN source_url = %s THEN 0
                       WHEN source_url = %s THEN 1
                       ELSE 2
                     END
-              LIMIT 1",
+              LIMIT 1',
+            $table,
             $request,
             $path,
             '' !== $relative ? $relative : '\0no-match',
@@ -229,7 +231,7 @@ class MSH_Redirects {
                 $target .= '?' . $query;
             }
 
-            $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET hits = hits + 1 WHERE id = %d", $redirect->id ) );
+            $wpdb->query( $wpdb->prepare( 'UPDATE %i SET hits = hits + 1 WHERE id = %d', $table, $redirect->id ) );
             // wp_redirect, not wp_safe_redirect, on purpose.
             //
             // wp_safe_redirect() refuses any host but this one, and sending an
@@ -247,7 +249,7 @@ class MSH_Redirects {
         }
 
         if ( is_404() ) {
-            $log_table = $wpdb->prefix . 'msh_404_log';
+            $log_table = $wpdb->prefix . 'msh_seo_404_log';
             $referrer  = esc_url_raw( wp_unslash( $_SERVER['HTTP_REFERER'] ?? '' ) );
             $ua        = sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? '' ) );
 
@@ -274,12 +276,12 @@ class MSH_Redirects {
             // that makes this log actionable falls apart.
             $logged = '' !== $path ? $path : $request;
 
-            $existing = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$log_table} WHERE url = %s LIMIT 1", $logged ) );
+            $existing = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE url = %s LIMIT 1', $log_table, $logged ) );
 
             if ( $existing ) {
                 $wpdb->query( $wpdb->prepare(
-                    "UPDATE {$log_table} SET hits = hits + 1, last_hit = NOW(), referrer = %s, user_agent = %s WHERE id = %d",
-                    $referrer, $ua, $existing
+                    'UPDATE %i SET hits = hits + 1, last_hit = NOW(), referrer = %s, user_agent = %s WHERE id = %d',
+                    $log_table, $referrer, $ua, $existing
                 ) );
             } else {
                 $wpdb->insert( $log_table, array(
@@ -293,17 +295,17 @@ class MSH_Redirects {
     public static function render_admin_page() {
         global $wpdb;
 
-        if ( isset( $_POST['msh_redirect_action'] ) && check_admin_referer( 'msh_redirects_nonce' ) ) {
+        if ( isset( $_POST['msh_seo_redirect_action'] ) && check_admin_referer( 'msh_seo_redirects_nonce' ) ) {
             // Unslash BEFORE sanitising. WordPress adds slashes to every
             // superglobal, so sanitising first leaves the escapes baked into
             // the stored value — a URL with an apostrophe comes back wrong.
-            $action = sanitize_text_field( wp_unslash( $_POST['msh_redirect_action'] ) );
+            $action = sanitize_text_field( wp_unslash( $_POST['msh_seo_redirect_action'] ) );
             if ( 'add' === $action ) {
                 $source = sanitize_text_field( wp_unslash( $_POST['source_url'] ?? '' ) );
                 $target = esc_url_raw( wp_unslash( $_POST['target_url'] ?? '' ) );
                 $type   = in_array( (int) ( $_POST['redirect_type'] ?? 301 ), array( 301, 302 ), true ) ? (int) $_POST['redirect_type'] : 301;
                 if ( $source && $target ) {
-                    $wpdb->replace( $wpdb->prefix . 'msh_redirects', array(
+                    $wpdb->replace( $wpdb->prefix . 'msh_seo_redirects', array(
                         'source_url' => $source, 'target_url' => $target, 'redirect_type' => $type,
                     ), array( '%s', '%s', '%d' ) );
                     echo '<div class="notice notice-success"><p>Redirect saved.</p></div>';
@@ -311,27 +313,27 @@ class MSH_Redirects {
             } elseif ( 'delete' === $action ) {
                 $id = absint( $_POST['redirect_id'] ?? 0 );
                 if ( $id ) {
-                    $wpdb->delete( $wpdb->prefix . 'msh_redirects', array( 'id' => $id ), array( '%d' ) );
+                    $wpdb->delete( $wpdb->prefix . 'msh_seo_redirects', array( 'id' => $id ), array( '%d' ) );
                     echo '<div class="notice notice-success"><p>Redirect deleted.</p></div>';
                 }
             } elseif ( 'clear_log' === $action ) {
                 // Table name is safe — built from $wpdb->prefix.
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            $wpdb->query( "TRUNCATE TABLE {$wpdb->prefix}msh_404_log" );
+            $wpdb->query( "TRUNCATE TABLE {$wpdb->prefix}msh_seo_404_log" );
                 echo '<div class="notice notice-success"><p>404 log cleared.</p></div>';
             }
         }
 
         // Table names are safe — built from $wpdb->prefix.
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $redirects = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}msh_redirects ORDER BY created_at DESC LIMIT 100" );
+        $redirects = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}msh_seo_redirects ORDER BY created_at DESC LIMIT 100" );
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $log       = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}msh_404_log ORDER BY last_hit DESC LIMIT 50" );
+        $log       = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}msh_seo_404_log ORDER BY last_hit DESC LIMIT 50" );
 
         echo '<h2>Add Redirect</h2>';
         echo '<form method="post">';
-        wp_nonce_field( 'msh_redirects_nonce' );
-        echo '<input type="hidden" name="msh_redirect_action" value="add" />';
+        wp_nonce_field( 'msh_seo_redirects_nonce' );
+        echo '<input type="hidden" name="msh_seo_redirect_action" value="add" />';
         echo '<table class="form-table">';
         echo '<tr><th><label for="source_url">Source URL</label></th><td><input type="text" id="source_url" name="source_url" class="regular-text" placeholder="/old-page" required /></td></tr>';
         echo '<tr><th><label for="target_url">Target URL</label></th><td><input type="text" id="target_url" name="target_url" class="regular-text" placeholder="/new-page" required /></td></tr>';
@@ -350,8 +352,8 @@ class MSH_Redirects {
                 echo '<td>' . esc_html( $r->redirect_type ) . '</td>';
                 echo '<td>' . esc_html( $r->hits ) . '</td>';
                 echo '<td><form method="post" style="display:inline;">';
-                wp_nonce_field( 'msh_redirects_nonce' );
-                echo '<input type="hidden" name="msh_redirect_action" value="delete" />';
+                wp_nonce_field( 'msh_seo_redirects_nonce' );
+                echo '<input type="hidden" name="msh_seo_redirect_action" value="delete" />';
                 echo '<input type="hidden" name="redirect_id" value="' . esc_attr( $r->id ) . '" />';
                 echo '<button type="submit" class="button button-small">Delete</button>';
                 echo '</form></td></tr>';
@@ -364,8 +366,8 @@ class MSH_Redirects {
         echo '<h2>404 Log</h2>';
         if ( $log ) {
             echo '<form method="post" style="margin-bottom: 10px;">';
-            wp_nonce_field( 'msh_redirects_nonce' );
-            echo '<input type="hidden" name="msh_redirect_action" value="clear_log" />';
+            wp_nonce_field( 'msh_seo_redirects_nonce' );
+            echo '<input type="hidden" name="msh_seo_redirect_action" value="clear_log" />';
             echo '<button type="submit" class="button">Clear Log</button>';
             echo '</form>';
             echo '<table class="widefat fixed striped"><thead><tr><th>URL</th><th>Hits</th><th>Last Hit</th><th>Referrer</th></tr></thead><tbody>';

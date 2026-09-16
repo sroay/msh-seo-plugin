@@ -3,7 +3,7 @@
  * MSH Health Beacon — the plugin's daily report on its own condition.
  *
  * The redirect engine was dead from the day this plugin shipped. A dbDelta key
- * collision meant wp_msh_redirects was never created, so every redirect 404'd
+ * collision meant wp_msh_seo_redirects was never created, so every redirect 404'd
  * for the life of the plugin, and 11,306 dead hits accumulated before anyone
  * looked. The dashboard could see the SITE was up the whole time. Nothing
  * anywhere asked the plugin whether its own parts worked.
@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class MSH_Beacon {
+class MSH_SEO_Beacon {
 
 	const CRON_HOOK = 'msh_seo_health_beacon';
 
@@ -43,7 +43,7 @@ class MSH_Beacon {
 	public static function init() {
 		add_action( self::CRON_HOOK, array( __CLASS__, 'run' ) );
 		add_action( 'init', array( __CLASS__, 'maybe_schedule' ) );
-		add_action( 'wp_ajax_msh_beacon_run', array( __CLASS__, 'ajax_run' ) );
+		add_action( 'wp_ajax_msh_seo_beacon_run', array( __CLASS__, 'ajax_run' ) );
 	}
 
 	/**
@@ -82,8 +82,8 @@ class MSH_Beacon {
 	private static function redirect_state() {
 		global $wpdb;
 
-		$redirects = $wpdb->prefix . 'msh_redirects';
-		$log       = $wpdb->prefix . 'msh_404_log';
+		$redirects = $wpdb->prefix . 'msh_seo_redirects';
+		$log       = $wpdb->prefix . 'msh_seo_404_log';
 
 		$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $redirects ) );
 		if ( $found !== $redirects ) {
@@ -94,8 +94,7 @@ class MSH_Beacon {
 			);
 		}
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- name from $wpdb->prefix
-		$rules = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$redirects}" );
+		$rules = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $redirects ) );
 
 		$unmatched = 0;
 		$log_found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $log ) );
@@ -103,13 +102,14 @@ class MSH_Beacon {
 			// Hits in the last day that no rule would have caught. The join is
 			// the whole point: a raw 404 count says nothing, because a 404 the
 			// redirect engine successfully handles never reaches the log.
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- names from $wpdb->prefix
 			$unmatched = (int) $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT COALESCE(SUM(l.hits), 0)
-					   FROM {$log} l
-					   LEFT JOIN {$redirects} r ON r.source_url = l.url
-					  WHERE r.id IS NULL AND l.last_hit >= %s",
+					'SELECT COALESCE(SUM(l.hits), 0)
+					   FROM %i l
+					   LEFT JOIN %i r ON r.source_url = l.url
+					  WHERE r.id IS NULL AND l.last_hit >= %s',
+					$log,
+					$redirects,
 					gmdate( 'Y-m-d H:i:s', time() - DAY_IN_SECONDS )
 				)
 			);
@@ -249,11 +249,11 @@ class MSH_Beacon {
 			'site_url'       => home_url(),
 			// Which Google Analytics tag this site currently prints, so the
 			// dashboard can see delivery worked without crawling the page.
-			'tracking'       => MSH_Tracking::report(),
+			'tracking'       => MSH_SEO_Tracking::report(),
 			'subsystems'     => $subsystems,
 			'redirects'      => $redirects,
 			'cron'           => array(
-				'last_run' => get_option( 'msh_beacon_last_run', null ),
+				'last_run' => get_option( 'msh_seo_beacon_last_run', null ),
 			),
 			// Everything MSH needs to work out where the dead URLs should point.
 			// Sent with the report rather than fetched afterwards, because a
@@ -357,7 +357,7 @@ class MSH_Beacon {
 			return array();
 		}
 
-		$offset = (int) get_option( 'msh_beacon_reach_offset', 0 );
+		$offset = (int) get_option( 'msh_seo_beacon_reach_offset', 0 );
 		if ( $offset >= $total ) {
 			$offset = 0;
 		}
@@ -370,11 +370,10 @@ class MSH_Beacon {
 				'offset'           => $offset,
 				'orderby'          => 'ID',
 				'order'            => 'ASC',
-				'suppress_filters' => true,
 			)
 		);
 
-		update_option( 'msh_beacon_reach_offset', $offset + count( $items ), false );
+		update_option( 'msh_seo_beacon_reach_offset', $offset + count( $items ), false );
 
 		$out = array();
 		foreach ( $items as $item ) {
@@ -521,22 +520,23 @@ class MSH_Beacon {
 	 */
 	private static function unmatched_404s() {
 		global $wpdb;
-		$log       = $wpdb->prefix . 'msh_404_log';
-		$redirects = $wpdb->prefix . 'msh_redirects';
+		$log       = $wpdb->prefix . 'msh_seo_404_log';
+		$redirects = $wpdb->prefix . 'msh_seo_redirects';
 
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $log ) ) !== $log ) {
 			return array();
 		}
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- names from $wpdb->prefix
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT l.url, l.hits, l.referrer, l.user_agent, l.last_hit
-				   FROM {$log} l
-				   LEFT JOIN {$redirects} r ON r.source_url = l.url
+				'SELECT l.url, l.hits, l.referrer, l.user_agent, l.last_hit
+				   FROM %i l
+				   LEFT JOIN %i r ON r.source_url = l.url
 				  WHERE r.id IS NULL AND l.last_hit >= %s
 			   ORDER BY l.hits DESC
-				  LIMIT %d",
+				  LIMIT %d',
+				$log,
+				$redirects,
 				gmdate( 'Y-m-d H:i:s', time() - ( 30 * DAY_IN_SECONDS ) ),
 				self::MAX_DEAD_URLS
 			),
@@ -582,7 +582,6 @@ class MSH_Beacon {
 				'numberposts'      => self::MAX_POSTS,
 				'orderby'          => 'date',
 				'order'            => 'DESC',
-				'suppress_filters' => true,
 			)
 		);
 
@@ -602,12 +601,11 @@ class MSH_Beacon {
 	 */
 	private static function existing_rules() {
 		global $wpdb;
-		$table = $wpdb->prefix . 'msh_redirects';
+		$table = $wpdb->prefix . 'msh_seo_redirects';
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
 			return array();
 		}
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- name from $wpdb->prefix
-		$rows = $wpdb->get_results( "SELECT source_url, target_url, note FROM {$table} LIMIT 2000", ARRAY_A );
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT source_url, target_url, note FROM %i LIMIT 2000', $table ), ARRAY_A );
 		return $rows ? $rows : array();
 	}
 
@@ -636,9 +634,9 @@ class MSH_Beacon {
 		// A schema check first: the note column is what makes these revertible,
 		// and writing rules without it would produce exactly the unattributable
 		// state this design exists to avoid.
-		MSH_Redirects::ensure_schema();
+		MSH_SEO_Redirects::ensure_schema();
 
-		$table = $wpdb->prefix . 'msh_redirects';
+		$table = $wpdb->prefix . 'msh_seo_redirects';
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
 			return array( 'applied' => 0, 'skipped' => count( $rules ), 'error' => 'no redirect table' );
 		}
@@ -654,8 +652,7 @@ class MSH_Beacon {
 				continue;
 			}
 
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- name from $wpdb->prefix
-			$exists = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE source_url = %s", $source ) );
+			$exists = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE source_url = %s', $table, $source ) );
 			if ( $exists ) {
 				$skipped++;
 				continue;
@@ -687,7 +684,7 @@ class MSH_Beacon {
 	 * ----------------------------------------------------------------*/
 
 	public static function run() {
-		$api_key = MSH_Auth::get_key();
+		$api_key = MSH_SEO_Auth::get_key();
 		if ( empty( $api_key ) ) {
 			return null;
 		}
@@ -695,7 +692,7 @@ class MSH_Beacon {
 		$payload = self::collect();
 
 		$response = wp_remote_post(
-			MSH_API::BASE_URL . '/beacon',
+			MSH_SEO_API::BASE_URL . '/beacon',
 			array(
 				'timeout' => 30,
 				'headers' => array(
@@ -725,13 +722,13 @@ class MSH_Beacon {
 			return new WP_Error( 'beacon_rejected', $msg );
 		}
 
-		update_option( 'msh_beacon_last_run', current_time( 'c' ), false );
+		update_option( 'msh_seo_beacon_last_run', current_time( 'c' ), false );
 
 		// The Google Analytics measurement id the dashboard wants on this site.
 		// Third delivery channel after the direct push and the /verify reply —
 		// the one that needs nothing but this daily round trip.
 		if ( isset( $body['analytics'] ) && is_array( $body['analytics'] ) ) {
-			MSH_Tracking::absorb( $body['analytics'] );
+			MSH_SEO_Tracking::absorb( $body['analytics'] );
 		}
 
 		// Apply the repairs MSH worked out from the report we just sent. The
@@ -742,13 +739,13 @@ class MSH_Beacon {
 		if ( ! empty( $body['redirects'] ) ) {
 			$healed = self::apply_redirects( $body['redirects'] );
 			if ( $healed['applied'] > 0 ) {
-				$log   = get_option( 'msh_beacon_heal_log', array() );
+				$log   = get_option( 'msh_seo_beacon_heal_log', array() );
 				$log[] = array(
 					'at'      => current_time( 'c' ),
 					'applied' => $healed['applied'],
 					'skipped' => $healed['skipped'],
 				);
-				update_option( 'msh_beacon_heal_log', array_slice( $log, -30 ), false );
+				update_option( 'msh_seo_beacon_heal_log', array_slice( $log, -30 ), false );
 			}
 		}
 
@@ -756,7 +753,7 @@ class MSH_Beacon {
 		// show the same answer, rather than a second opinion derived here.
 		if ( isset( $body['status'] ) ) {
 			update_option(
-				'msh_beacon_last_result',
+				'msh_seo_beacon_last_result',
 				array(
 					'status' => $body['status'],
 					'faults' => isset( $body['faults'] ) ? $body['faults'] : array(),
@@ -780,7 +777,7 @@ class MSH_Beacon {
 	 */
 	public static function revert_auto_redirects() {
 		global $wpdb;
-		$table = $wpdb->prefix . 'msh_redirects';
+		$table = $wpdb->prefix . 'msh_seo_redirects';
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
 			return 0;
 		}
@@ -795,7 +792,7 @@ class MSH_Beacon {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => 'Insufficient permissions' ), 403 );
 		}
-		check_ajax_referer( 'msh_beacon_run' );
+		check_ajax_referer( 'msh_seo_beacon_run' );
 
 		$result = self::run();
 

@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Meta_Tags {
+class MSH_SEO_Meta_Tags {
 
     /**
      * Initialize hooks.
@@ -565,4 +565,4 @@ class MSH_Meta_Tags {
 // hooked directly in msh-seo.php via add_action('wp_head', ...).
 // Calling init() here would register output_meta_tags TWICE.
 // Only register the document_title filter here.
-add_filter( 'document_title_parts', array( 'MSH_Meta_Tags', 'filter_document_title' ) );
+add_filter( 'document_title_parts', array( 'MSH_SEO_Meta_Tags', 'filter_document_title' ) );

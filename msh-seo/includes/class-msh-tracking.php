@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Tracking {
+class MSH_SEO_Tracking {
 
     const OPTION  = 'msh_seo_ga_measurement_id';
     const PATTERN = '/^G-[A-Z0-9]{6,12}$/';
@@ -74,10 +74,13 @@ class MSH_Tracking {
     }
 
     /**
-     * The snippet. Same text as the dashboard's gtagSnippet(), which is what
-     * the dashboard looks for on the live page to confirm the install.
+     * Enqueue Google's tag with the measurement id.
+     *
+     * Hooked to wp_enqueue_scripts in init(). Until 1.5.0 the hook named this
+     * method "enqueue" while the method was still called output(), so every
+     * front-end request ended in a fatal "invalid callback" error.
      */
-    public static function output() {
+    public static function enqueue() {
         if ( is_admin() || is_feed() || is_preview() ) {
             return;
         }
@@ -160,7 +163,7 @@ class MSH_Tracking {
         $id = isset( $params['measurement_id'] ) ? (string) $params['measurement_id'] : '';
         if ( ! self::set( $id ) ) {
             return new WP_Error(
-                'msh_invalid_measurement_id',
+                'msh_seo_invalid_measurement_id',
                 'Expected a GA4 measurement id like G-XXXXXXXXXX (not a property id).',
                 array( 'status' => 400 )
             );

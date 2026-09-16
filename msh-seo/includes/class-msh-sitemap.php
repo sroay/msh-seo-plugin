@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Sitemap {
+class MSH_SEO_Sitemap {
 
     /** @var int Maximum URLs per sub-sitemap. */
     const MAX_URLS = 1000;
@@ -36,10 +36,6 @@ class MSH_Sitemap {
 
         // Backup: intercept via rewrite query var on template_redirect.
         add_action( 'template_redirect', array( __CLASS__, 'handle_sitemap_request' ) );
-
-        // Ping search engines on publish / delete.
-        add_action( 'publish_post', array( __CLASS__, 'ping_search_engines' ) );
-        add_action( 'delete_post', array( __CLASS__, 'ping_search_engines' ) );
     }
 
     /**
@@ -59,44 +55,32 @@ class MSH_Sitemap {
         // Remove query string.
         $request_uri = strtok( $request_uri, '?' );
 
-        // Prevent caching plugins from wrapping our output.
+        $renderers = array(
+            'sitemap.xml'            => 'render_index',
+            'sitemap_index.xml'      => 'render_index',
+            'sitemap-posts.xml'      => 'render_posts',
+            'sitemap-pages.xml'      => 'render_pages',
+            'sitemap-categories.xml' => 'render_categories',
+            'sitemap-tags.xml'       => 'render_tags',
+        );
+        if ( ! isset( $renderers[ $request_uri ] ) ) {
+            return;
+        }
+
+        // Only now, on a sitemap request: tell caching plugins not to store or
+        // wrap this response. Defining it any earlier would switch page
+        // caching off for every URL on the site.
         if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+            // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- the shared constant caching plugins read; it cannot be prefixed.
             define( 'DONOTCACHEPAGE', true );
         }
 
-        switch ( $request_uri ) {
-            case 'sitemap.xml':
-            case 'sitemap_index.xml':
-                status_header( 200 );
-                header( 'Content-Type: application/xml; charset=UTF-8' );
-                header( 'X-Robots-Tag: noindex, follow' );
-                self::render_index();
-                exit;
-            case 'sitemap-posts.xml':
-                status_header( 200 );
-                header( 'Content-Type: application/xml; charset=UTF-8' );
-                header( 'X-Robots-Tag: noindex, follow' );
-                self::render_posts();
-                exit;
-            case 'sitemap-pages.xml':
-                status_header( 200 );
-                header( 'Content-Type: application/xml; charset=UTF-8' );
-                header( 'X-Robots-Tag: noindex, follow' );
-                self::render_pages();
-                exit;
-            case 'sitemap-categories.xml':
-                status_header( 200 );
-                header( 'Content-Type: application/xml; charset=UTF-8' );
-                header( 'X-Robots-Tag: noindex, follow' );
-                self::render_categories();
-                exit;
-            case 'sitemap-tags.xml':
-                status_header( 200 );
-                header( 'Content-Type: application/xml; charset=UTF-8' );
-                header( 'X-Robots-Tag: noindex, follow' );
-                self::render_tags();
-                exit;
-        }
+        status_header( 200 );
+        header( 'Content-Type: application/xml; charset=UTF-8' );
+        header( 'X-Robots-Tag: noindex, follow' );
+        $render = $renderers[ $request_uri ];
+        self::$render();
+        exit;
     }
 
     /**
@@ -105,13 +89,13 @@ class MSH_Sitemap {
      * @return void
      */
     public static function add_rewrite_rules() {
-        add_rewrite_rule( 'sitemap_index\.xml$', 'index.php?msh_sitemap=index', 'top' );
-        add_rewrite_rule( 'sitemap-posts\.xml$', 'index.php?msh_sitemap=posts', 'top' );
-        add_rewrite_rule( 'sitemap-pages\.xml$', 'index.php?msh_sitemap=pages', 'top' );
-        add_rewrite_rule( 'sitemap-categories\.xml$', 'index.php?msh_sitemap=categories', 'top' );
-        add_rewrite_rule( 'sitemap-tags\.xml$', 'index.php?msh_sitemap=tags', 'top' );
+        add_rewrite_rule( 'sitemap_index\.xml$', 'index.php?msh_seo_sitemap=index', 'top' );
+        add_rewrite_rule( 'sitemap-posts\.xml$', 'index.php?msh_seo_sitemap=posts', 'top' );
+        add_rewrite_rule( 'sitemap-pages\.xml$', 'index.php?msh_seo_sitemap=pages', 'top' );
+        add_rewrite_rule( 'sitemap-categories\.xml$', 'index.php?msh_seo_sitemap=categories', 'top' );
+        add_rewrite_rule( 'sitemap-tags\.xml$', 'index.php?msh_seo_sitemap=tags', 'top' );
 
-        add_rewrite_tag( '%msh_sitemap%', '([a-z]+)' );
+        add_rewrite_tag( '%msh_seo_sitemap%', '([a-z]+)' );
     }
 
     /**
@@ -120,7 +104,7 @@ class MSH_Sitemap {
      * @return void
      */
     public static function handle_sitemap_request() {
-        $sitemap = get_query_var( 'msh_sitemap' );
+        $sitemap = get_query_var( 'msh_seo_sitemap' );
 
         if ( empty( $sitemap ) ) {
             return;
@@ -128,6 +112,7 @@ class MSH_Sitemap {
 
         // Prevent caching plugins from wrapping our output.
         if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+            // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- the shared constant caching plugins read; it cannot be prefixed.
             define( 'DONOTCACHEPAGE', true );
         }
 
@@ -396,43 +381,5 @@ class MSH_Sitemap {
         }
 
         return 'monthly';
-    }
-
-    /**
-     * Ping Google and Bing with the sitemap URL after content changes.
-     *
-     * @param int $post_id The post ID that was published or deleted.
-     * @return void
-     */
-    public static function ping_search_engines( $post_id ) {
-        // Only ping for published posts.
-        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-            return;
-        }
-
-        $post = get_post( $post_id );
-        if ( ! $post || 'publish' !== $post->post_status ) {
-            return;
-        }
-
-        $sitemap_url = home_url( '/sitemap_index.xml' );
-
-        // Google.
-        wp_remote_get(
-            'https://www.google.com/ping?sitemap=' . rawurlencode( $sitemap_url ),
-            array(
-                'timeout'  => 3,
-                'blocking' => false,
-            )
-        );
-
-        // Bing (IndexNow style, but legacy ping still works).
-        wp_remote_get(
-            'https://www.bing.com/ping?sitemap=' . rawurlencode( $sitemap_url ),
-            array(
-                'timeout'  => 3,
-                'blocking' => false,
-            )
-        );
     }
 }

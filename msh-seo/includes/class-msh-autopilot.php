@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Autopilot {
+class MSH_SEO_Autopilot {
 
     /** Cron hook name. */
     const CRON_HOOK = 'msh_seo_autopilot_scan';
@@ -47,8 +47,8 @@ class MSH_Autopilot {
         add_action( 'rest_api_init', array( __CLASS__, 'register_rest_routes' ) );
 
         // Admin AJAX handlers.
-        add_action( 'wp_ajax_msh_autopilot_run_scan', array( __CLASS__, 'ajax_run_scan' ) );
-        add_action( 'wp_ajax_msh_autopilot_save_settings', array( __CLASS__, 'ajax_save_settings' ) );
+        add_action( 'wp_ajax_msh_seo_autopilot_run_scan', array( __CLASS__, 'ajax_run_scan' ) );
+        add_action( 'wp_ajax_msh_seo_autopilot_save_settings', array( __CLASS__, 'ajax_save_settings' ) );
     }
 
     /* ------------------------------------------------------------------
@@ -59,14 +59,14 @@ class MSH_Autopilot {
      * Register a custom weekly schedule if not already present.
      */
     public static function add_cron_schedule( $schedules ) {
-        if ( ! isset( $schedules['msh_weekly'] ) ) {
-            $schedules['msh_weekly'] = array(
+        if ( ! isset( $schedules['msh_seo_weekly'] ) ) {
+            $schedules['msh_seo_weekly'] = array(
                 'interval' => WEEK_IN_SECONDS,
                 'display'  => __( 'Once Weekly (MSH)', 'msh-seo' ),
             );
         }
-        if ( ! isset( $schedules['msh_biweekly'] ) ) {
-            $schedules['msh_biweekly'] = array(
+        if ( ! isset( $schedules['msh_seo_biweekly'] ) ) {
+            $schedules['msh_seo_biweekly'] = array(
                 'interval' => 2 * WEEK_IN_SECONDS,
                 'display'  => __( 'Every Two Weeks (MSH)', 'msh-seo' ),
             );
@@ -91,7 +91,7 @@ class MSH_Autopilot {
             $next_wed = new DateTimeImmutable( 'today 04:00', $tz );
         }
 
-        wp_schedule_event( $next_wed->getTimestamp(), 'msh_weekly', self::CRON_HOOK );
+        wp_schedule_event( $next_wed->getTimestamp(), 'msh_seo_weekly', self::CRON_HOOK );
     }
 
     /**
@@ -137,8 +137,8 @@ class MSH_Autopilot {
         $current_year  = (int) gmdate( 'Y' );
         $site_url      = home_url();
         $all_signals   = array();
-        $min_age_days  = (int) get_option( 'msh_autopilot_min_age_days', 30 );
-        $min_words     = (int) get_option( 'msh_autopilot_min_word_count', 300 );
+        $min_age_days  = (int) get_option( 'msh_seo_autopilot_min_age_days', 30 );
+        $min_words     = (int) get_option( 'msh_seo_autopilot_min_word_count', 300 );
 
         $totals = array(
             'total_posts'  => count( $posts ),
@@ -169,7 +169,7 @@ class MSH_Autopilot {
                 continue;
             }
 
-            // Calculate freshness score (reuse MSH_Freshness algorithm).
+            // Calculate freshness score (reuse MSH_SEO_Freshness algorithm).
             $freshness_score = self::calculate_freshness( $post, $now_ts, $current_year );
 
             // Enhanced content signals.
@@ -242,7 +242,7 @@ class MSH_Autopilot {
     }
 
     /**
-     * Calculate freshness score for a post (mirrors MSH_Freshness algorithm).
+     * Calculate freshness score for a post (mirrors MSH_SEO_Freshness algorithm).
      */
     private static function calculate_freshness( $post, $now_ts, $current_year ) {
         $modified_ts = strtotime( $post->post_modified );
@@ -274,21 +274,21 @@ class MSH_Autopilot {
     /**
      * POST the autopilot report to the MSH dashboard.
      *
-     * Uses MSH_Auth::get_key() for the encrypted API key and
-     * MSH_API::BASE_URL for the endpoint — same auth as all other
+     * Uses MSH_SEO_Auth::get_key() for the encrypted API key and
+     * MSH_SEO_API::BASE_URL for the endpoint — same auth as all other
      * plugin-to-dashboard requests.
      *
      * @param array $payload The scan report data.
      * @return array|WP_Error|null Response, error, or null if not connected.
      */
     private static function send_autopilot_report( $payload ) {
-        $api_key = MSH_Auth::get_key();
+        $api_key = MSH_SEO_Auth::get_key();
 
         if ( empty( $api_key ) ) {
             return null;
         }
 
-        $url = MSH_API::BASE_URL . '/autopilot-report';
+        $url = MSH_SEO_API::BASE_URL . '/autopilot-report';
 
         $response = wp_remote_post( $url, array(
             'timeout' => 120,
@@ -319,7 +319,7 @@ class MSH_Autopilot {
         }
 
         // Save last scan timestamp on successful report delivery.
-        update_option( 'msh_autopilot_last_scan', current_time( 'c' ) );
+        update_option( 'msh_seo_autopilot_last_scan', current_time( 'c' ) );
 
         return $body;
     }
@@ -373,9 +373,9 @@ class MSH_Autopilot {
             $allowed_meta = array(
                 '_msh_seo_title',
                 '_msh_seo_description',
-                '_msh_focus_keyword',
+                '_msh_seo_focus_keyword',
                 '_msh_seo_score',
-                '_msh_freshness_score',
+                '_msh_seo_freshness_score',
             );
 
             foreach ( $params['meta'] as $key => $value ) {
@@ -386,8 +386,8 @@ class MSH_Autopilot {
         }
 
         // Update freshness score to 100 after refresh.
-        update_post_meta( $post_id, '_msh_freshness_score', 100 );
-        update_post_meta( $post_id, '_msh_freshness_checked', gmdate( 'Y-m-d\TH:i:s\Z' ) );
+        update_post_meta( $post_id, '_msh_seo_freshness_score', 100 );
+        update_post_meta( $post_id, '_msh_seo_freshness_checked', gmdate( 'Y-m-d\TH:i:s\Z' ) );
 
         // Ping Google Indexing API if requested.
         if ( ! empty( $params['ping_google'] ) ) {
@@ -403,20 +403,14 @@ class MSH_Autopilot {
     }
 
     /**
-     * Ping Google about an updated URL.
-     * Uses Google Indexing API if credentials exist, otherwise sitemap ping.
+     * Tell search engines about a refreshed URL through IndexNow.
+     *
+     * This used to request Google's sitemap ping endpoint as well. Google
+     * retired that endpoint in 2023, so the request did nothing.
      */
     private static function ping_google( $url ) {
-        // Sitemap ping fallback (always works, no credentials needed).
-        $sitemap_url = home_url( '/sitemap.xml' );
-        wp_remote_get( 'https://www.google.com/ping?sitemap=' . urlencode( $sitemap_url ), array(
-            'timeout'  => 5,
-            'blocking' => false,
-        ) );
-
-        // IndexNow ping (if MSH_Indexing class exists and is configured).
-        if ( class_exists( 'MSH_Indexing' ) && method_exists( 'MSH_Indexing', 'submit_url' ) ) {
-            MSH_Indexing::submit_url( $url );
+        if ( class_exists( 'MSH_SEO_Indexing' ) ) {
+            MSH_SEO_Indexing::submit_url( $url );
         }
     }
 
@@ -428,14 +422,14 @@ class MSH_Autopilot {
      * AJAX: Run autopilot scan immediately.
      */
     public static function ajax_run_scan() {
-        check_ajax_referer( 'msh_admin_nonce', 'nonce' );
+        check_ajax_referer( 'msh_seo_admin_nonce', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( array( 'message' => 'Permission denied.' ) );
         }
 
         // Check connection before scanning.
-        $api_key = MSH_Auth::get_key();
+        $api_key = MSH_SEO_Auth::get_key();
         if ( empty( $api_key ) ) {
             wp_send_json_error( array( 'message' => 'Not connected to MSH. Please connect first in MSH SEO settings.' ) );
         }
@@ -444,7 +438,7 @@ class MSH_Autopilot {
         self::run_autopilot_scan();
 
         // Check if report was actually sent (last_scan updated by send_autopilot_report on success).
-        $last_scan = get_option( 'msh_autopilot_last_scan', '' );
+        $last_scan = get_option( 'msh_seo_autopilot_last_scan', '' );
 
         wp_send_json_success( array(
             'message'   => 'Autopilot scan completed! Data has been sent to your MSH dashboard.',
@@ -456,7 +450,7 @@ class MSH_Autopilot {
      * AJAX: Save autopilot settings.
      */
     public static function ajax_save_settings() {
-        check_ajax_referer( 'msh_admin_nonce', 'nonce' );
+        check_ajax_referer( 'msh_seo_admin_nonce', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( array( 'message' => 'Permission denied.' ) );
@@ -476,11 +470,11 @@ class MSH_Autopilot {
         $min_word_count = max( 0, absint( $_POST['min_word_count'] ?? 300 ) );
         $auto_ping      = ! empty( $_POST['auto_ping'] );
 
-        update_option( 'msh_autopilot_default_mode', $default_mode );
-        update_option( 'msh_autopilot_scan_frequency', $scan_frequency );
-        update_option( 'msh_autopilot_min_age_days', $min_age_days );
-        update_option( 'msh_autopilot_min_word_count', $min_word_count );
-        update_option( 'msh_autopilot_auto_ping', $auto_ping );
+        update_option( 'msh_seo_autopilot_default_mode', $default_mode );
+        update_option( 'msh_seo_autopilot_scan_frequency', $scan_frequency );
+        update_option( 'msh_seo_autopilot_min_age_days', $min_age_days );
+        update_option( 'msh_seo_autopilot_min_word_count', $min_word_count );
+        update_option( 'msh_seo_autopilot_auto_ping', $auto_ping );
 
         // Reschedule cron if frequency changed.
         $ts = wp_next_scheduled( self::CRON_HOOK );
@@ -488,11 +482,11 @@ class MSH_Autopilot {
             wp_unschedule_event( $ts, self::CRON_HOOK );
         }
 
-        $interval = 'msh_weekly';
+        $interval = 'msh_seo_weekly';
         if ( $scan_frequency === 'daily' ) {
             $interval = 'daily';
         } elseif ( $scan_frequency === 'biweekly' ) {
-            $interval = 'msh_biweekly';
+            $interval = 'msh_seo_biweekly';
         }
 
         wp_schedule_event( time() + HOUR_IN_SECONDS, $interval, self::CRON_HOOK );
@@ -504,14 +498,14 @@ class MSH_Autopilot {
      * Render the Autopilot admin page.
      */
     public static function render_admin_page() {
-        $is_connected     = MSH_Auth::is_connected();
-        $last_scan        = get_option( 'msh_autopilot_last_scan', '' );
+        $is_connected     = MSH_SEO_Auth::is_connected();
+        $last_scan        = get_option( 'msh_seo_autopilot_last_scan', '' );
         $next_scheduled   = wp_next_scheduled( self::CRON_HOOK );
-        $default_mode     = get_option( 'msh_autopilot_default_mode', 'approval' );
-        $scan_frequency   = get_option( 'msh_autopilot_scan_frequency', 'weekly' );
-        $min_age_days     = get_option( 'msh_autopilot_min_age_days', 30 );
-        $min_word_count   = get_option( 'msh_autopilot_min_word_count', 300 );
-        $auto_ping        = get_option( 'msh_autopilot_auto_ping', true );
+        $default_mode     = get_option( 'msh_seo_autopilot_default_mode', 'approval' );
+        $scan_frequency   = get_option( 'msh_seo_autopilot_scan_frequency', 'weekly' );
+        $min_age_days     = get_option( 'msh_seo_autopilot_min_age_days', 30 );
+        $min_word_count   = get_option( 'msh_seo_autopilot_min_word_count', 300 );
+        $auto_ping        = get_option( 'msh_seo_autopilot_auto_ping', true );
 
         // Count published posts.
         $post_count = wp_count_posts( 'post' );
@@ -648,7 +642,7 @@ class MSH_Autopilot {
                         <td>
                             <label style="display:flex;align-items:flex-start;gap:8px;">
                                 <input type="checkbox" id="msh-ap-ping" value="1" <?php checked( $auto_ping ); ?> style="margin-top:3px;" />
-                                <span><?php esc_html_e( 'Automatically ping Google (via sitemap) and IndexNow after a post is refreshed. Recommended: ON — Tells search engines to re-crawl the updated page faster.', 'msh-seo' ); ?></span>
+                                <span><?php esc_html_e( 'Submit refreshed posts to IndexNow straight away so search engines recrawl them.', 'msh-seo' ); ?></span>
                             </label>
                         </td>
                     </tr>
@@ -685,74 +679,6 @@ class MSH_Autopilot {
             </div>
         </div>
 
-        <script>
-        jQuery(function($) {
-            // Run Scan Now
-            $('#msh-autopilot-scan-btn').on('click', function() {
-                var btn = $(this);
-                var spinner = $('#msh-autopilot-scan-spinner');
-                var result = $('#msh-autopilot-scan-result');
-
-                if (!confirm('Run autopilot scan now? This will analyze all published posts and send data to your MSH dashboard.')) return;
-
-                btn.prop('disabled', true);
-                spinner.addClass('is-active');
-                result.html('<span style="color:#666;">Scanning posts... This may take a minute.</span>');
-
-                $.post(mshAdmin.ajaxUrl, {
-                    action: 'msh_autopilot_run_scan',
-                    nonce: mshAdmin.nonce
-                }, function(response) {
-                    btn.prop('disabled', false);
-                    spinner.removeClass('is-active');
-
-                    if (response.success) {
-                        result.html('<span style="color:#00a32a;font-weight:600;">\u2705 ' + response.data.message + '</span>');
-                    } else {
-                        result.html('<span style="color:#d63638;">\u274c ' + (response.data.message || 'Scan failed.') + '</span>');
-                    }
-                }).fail(function(xhr) {
-                    btn.prop('disabled', false);
-                    spinner.removeClass('is-active');
-                    result.html('<span style="color:#d63638;">\u274c Request failed (timeout or server error). Try again.</span>');
-                });
-            });
-
-            // Save Settings
-            $('#msh-autopilot-save-btn').on('click', function() {
-                var btn = $(this);
-                var spinner = $('#msh-autopilot-save-spinner');
-                var result = $('#msh-autopilot-save-result');
-
-                btn.prop('disabled', true);
-                spinner.addClass('is-active');
-                result.html('');
-
-                $.post(mshAdmin.ajaxUrl, {
-                    action: 'msh_autopilot_save_settings',
-                    nonce: mshAdmin.nonce,
-                    default_mode: $('#msh-ap-mode').val(),
-                    scan_frequency: $('#msh-ap-frequency').val(),
-                    min_age_days: $('#msh-ap-min-age').val(),
-                    min_word_count: $('#msh-ap-min-words').val(),
-                    auto_ping: $('#msh-ap-ping').is(':checked') ? '1' : ''
-                }, function(response) {
-                    btn.prop('disabled', false);
-                    spinner.removeClass('is-active');
-
-                    if (response.success) {
-                        result.html('<span style="color:#00a32a;font-weight:600;">\u2705 ' + response.data.message + '</span>');
-                    } else {
-                        result.html('<span style="color:#d63638;">' + (response.data.message || 'Save failed.') + '</span>');
-                    }
-                }).fail(function() {
-                    btn.prop('disabled', false);
-                    spinner.removeClass('is-active');
-                    result.html('<span style="color:#d63638;">Request failed.</span>');
-                });
-            });
-        });
-        </script>
         <?php
     }
 }

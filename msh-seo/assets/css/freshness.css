@@ -1,0 +1,17 @@
+/* MSH SEO: content freshness badge (Posts list) and admin-bar notice. */
+.msh-freshness-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.6;
+    white-space: nowrap;
+}
+#wp-admin-bar-msh-freshness-notice .ab-item {
+    color: #fff !important;
+    background: #dc2626 !important;
+}
+#wp-admin-bar-msh-freshness-notice:hover .ab-item {
+    background: #b91c1c !important;
+}

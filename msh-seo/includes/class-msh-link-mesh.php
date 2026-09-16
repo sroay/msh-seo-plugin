@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Link_Mesh {
+class MSH_SEO_Link_Mesh {
 
     /**
      * Hook REST route registration.
@@ -32,9 +32,7 @@ class MSH_Link_Mesh {
         register_rest_route( 'msh-seo/v1', '/link-suggestions', array(
             'methods'             => 'POST',
             'callback'            => array( __CLASS__, 'rest_link_suggestions' ),
-            'permission_callback' => function () {
-                return current_user_can( 'edit_posts' );
-            },
+            'permission_callback' => 'msh_seo_can_edit_requested_post',
         ) );
     }
 
@@ -55,12 +53,12 @@ class MSH_Link_Mesh {
         }
 
         if ( empty( $title ) && empty( $content ) ) {
-            return new WP_Error( 'msh_missing_data', __( 'Title or content is required.', 'msh-seo' ), array( 'status' => 400 ) );
+            return new WP_Error( 'msh_seo_missing_data', __( 'Title or content is required.', 'msh-seo' ), array( 'status' => 400 ) );
         }
 
         $inventory = self::build_inventory( $post_id );
 
-        $result = MSH_API::link_suggestions( $title, $content, $keyword, $url, $inventory );
+        $result = MSH_SEO_API::link_suggestions( $title, $content, $keyword, $url, $inventory );
 
         if ( is_wp_error( $result ) ) {
             return $result;

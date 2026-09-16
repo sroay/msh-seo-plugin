@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Page_Types {
+class MSH_SEO_Page_Types {
 
     /**
      * Auto-detect page type from content, template, and URL.
@@ -170,8 +170,8 @@ class MSH_Page_Types {
         $content = $post ? $post->post_content : '';
         $title   = $post ? $post->post_title : '';
         $meta    = get_post_meta( $post_id, '_msh_seo_description', true );
-        $keyword = get_post_meta( $post_id, '_msh_focus_keyword', true );
-        $schema  = get_post_meta( $post_id, '_msh_schema_type', true );
+        $keyword = get_post_meta( $post_id, '_msh_seo_focus_keyword', true );
+        $schema  = get_post_meta( $post_id, '_msh_seo_schema_type', true );
 
         $context = array(
             'post_id' => $post_id,
@@ -300,7 +300,7 @@ class MSH_Page_Types {
                 'max'   => 10,
                 'check' => function ( $ctx ) {
                     $has = (bool) preg_match( '/<img[^>]+/i', $ctx['content'] );
-                    $og  = get_post_meta( $ctx['post_id'], '_msh_og_image', true );
+                    $og  = get_post_meta( $ctx['post_id'], '_msh_seo_og_image', true );
                     $pass = $has || ! empty( $og ) || has_post_thumbnail( $ctx['post_id'] );
                     return array(
                         'name'  => __( 'OG Image Set', 'msh-seo' ),

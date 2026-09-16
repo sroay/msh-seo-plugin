@@ -1,0 +1,27 @@
+/* MSH SEO: newsletter signup form. */
+.msh-newsletter {
+	margin: 1.5em 0;
+	padding: 1.1em 1.25em;
+	border: 1px solid rgba(128, 128, 128, 0.25);
+	border-radius: 8px;
+}
+.msh-newsletter__headline { margin: 0; font-weight: 600; }
+.msh-newsletter__body { margin: 0.3em 0 0.8em; opacity: 0.8; font-size: 0.95em; }
+.msh-newsletter__row { display: flex; gap: 0.5em; flex-wrap: wrap; }
+.msh-newsletter__input {
+	flex: 1 1 220px;
+	padding: 0.55em 0.7em;
+	border: 1px solid rgba(128, 128, 128, 0.4);
+	border-radius: 6px;
+	font: inherit;
+}
+.msh-newsletter__btn {
+	padding: 0.55em 1em;
+	border: 0;
+	border-radius: 6px;
+	background: #111;
+	color: #fff;
+	font: inherit;
+	cursor: pointer;
+}
+.msh-newsletter__note { margin: 0.5em 0 0; font-size: 0.85em; opacity: 0.7; }

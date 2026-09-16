@@ -30,7 +30,7 @@ class MSH_SEO_Analysis {
         $title    = $post->post_title;
         $content  = $post->post_content;
         $slug     = $post->post_name;
-        $keyword  = get_post_meta( $post_id, '_msh_focus_keyword', true );
+        $keyword  = get_post_meta( $post_id, '_msh_seo_focus_keyword', true );
         $meta_desc = get_post_meta( $post_id, '_msh_seo_description', true );
 
         $plain_content = wp_strip_all_tags( $content );

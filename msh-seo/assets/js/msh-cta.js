@@ -28,8 +28,8 @@
 
 			var returning = false;
 			try {
-				returning = !! localStorage.getItem( 'msh_seen' );
-				localStorage.setItem( 'msh_seen', '1' );
+				returning = !! localStorage.getItem( 'msh_seo_seen' );
+				localStorage.setItem( 'msh_seo_seen', '1' );
 			} catch ( e ) {}
 
 			var fromSearch = /(google\.|bing\.|duckduckgo\.|yahoo\.|ecosia\.|search\?)/.test( refHost + ' ' + ref );
@@ -45,12 +45,12 @@
 
 	function sendEvent( type, bucket ) {
 		try {
-			if ( ! window.mshCta || ! window.mshCta.endpoint ) return;
+			if ( ! window.mshSeoCta || ! window.mshSeoCta.endpoint ) return;
 			var payload = JSON.stringify( { url: location.href, type: type, bucket: bucket } );
 			if ( navigator.sendBeacon ) {
-				navigator.sendBeacon( window.mshCta.endpoint, new Blob( [ payload ], { type: 'application/json' } ) );
+				navigator.sendBeacon( window.mshSeoCta.endpoint, new Blob( [ payload ], { type: 'application/json' } ) );
 			} else {
-				fetch( window.mshCta.endpoint, {
+				fetch( window.mshSeoCta.endpoint, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: payload,

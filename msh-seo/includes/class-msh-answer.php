@@ -2,7 +2,7 @@
 /**
  * MSH Answer — quotable "Answer Engine" block.
  *
- * Renders a short, direct-answer callout ([msh_answer]…[/msh_answer]) marked
+ * Renders a short, direct-answer callout ([msh_seo_answer]…[/msh_seo_answer]) marked
  * with the `.msh-answer` class. This is the unit AI answer engines (Google AI
  * Overviews, ChatGPT/Perplexity) love to quote, and it's what the Speakable
  * schema (class-msh-schema.php) points voice assistants at. Keep it to ~40-60
@@ -15,13 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Answer {
+class MSH_SEO_Answer {
 
     /**
      * Register shortcode, block, and styles.
      */
     public static function init() {
-        add_shortcode( 'msh_answer', array( __CLASS__, 'render' ) );
+        add_shortcode( 'msh_seo_answer', array( __CLASS__, 'render' ) );
         add_action( 'init', array( __CLASS__, 'register_block' ) );
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_styles' ) );
     }
@@ -59,7 +59,7 @@ class MSH_Answer {
      * @return string HTML.
      */
     public static function render( $atts = array(), $content = null ) {
-        $atts  = shortcode_atts( array( 'label' => 'Quick answer' ), $atts, 'msh_answer' );
+        $atts  = shortcode_atts( array( 'label' => 'Quick answer' ), $atts, 'msh_seo_answer' );
         $text  = trim( (string) $content );
         if ( '' === $text ) {
             return '';
@@ -84,9 +84,9 @@ class MSH_Answer {
         if ( ! is_singular() ) {
             return;
         }
-        wp_register_style( 'msh-answer', false, array(), MSH_SEO_VERSION );
-        wp_enqueue_style( 'msh-answer' );
-        wp_add_inline_style( 'msh-answer',
+        wp_register_style( 'msh-seo-answer', false, array(), MSH_SEO_VERSION );
+        wp_enqueue_style( 'msh-seo-answer' );
+        wp_add_inline_style( 'msh-seo-answer',
             '.msh-answer{margin:1.5em 0;padding:16px 18px;background:#f6f9ff;border-left:4px solid #ff5c8a;'
             . 'border-radius:0 10px 10px 0;font-size:1.05em;line-height:1.55}'
             . '.msh-answer__label{display:block;font-size:.72em;font-weight:700;letter-spacing:.05em;'

@@ -16,14 +16,14 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Freshness {
+class MSH_SEO_Freshness {
 
     /** Cron hook name. */
     const CRON_HOOK = 'msh_seo_freshness_scan';
 
     /** Post-meta keys. */
-    const META_SCORE   = '_msh_freshness_score';
-    const META_CHECKED = '_msh_freshness_checked';
+    const META_SCORE   = '_msh_seo_freshness_score';
+    const META_CHECKED = '_msh_seo_freshness_checked';
 
     /**
      * Wire up all hooks.
@@ -56,8 +56,15 @@ class MSH_Freshness {
         // Admin-bar notice for stale posts.
         add_action( 'admin_bar_menu', array( __CLASS__, 'add_admin_bar_notice' ), 999 );
 
-        // Inline CSS for the badge and admin-bar node.
-        add_action( 'admin_head', array( __CLASS__, 'admin_inline_css' ) );
+        // Styles for the badge and admin-bar node.
+        add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_css' ) );
+    }
+
+    /**
+     * Load the badge and admin-bar styles on admin screens.
+     */
+    public static function enqueue_admin_css() {
+        wp_enqueue_style( 'msh-seo-freshness', MSH_SEO_URL . 'assets/css/freshness.css', array(), MSH_SEO_VERSION );
     }
 
     /* ------------------------------------------------------------------
@@ -169,7 +176,7 @@ class MSH_Freshness {
         }
 
         // Cache stale count for admin-bar notice.
-        update_option( 'msh_freshness_stale_count', $results['stale'], false );
+        update_option( 'msh_seo_freshness_stale_count', $results['stale'], false );
 
         // Report to MSH dashboard.
         self::send_report_to_msh( $results );
@@ -235,7 +242,7 @@ class MSH_Freshness {
      * @param array $results Aggregated scan results.
      */
     private static function send_report_to_msh( $results ) {
-        $api_key = MSH_Auth::get_key();
+        $api_key = MSH_SEO_Auth::get_key();
 
         if ( empty( $api_key ) ) {
             return;
@@ -251,7 +258,7 @@ class MSH_Freshness {
             'stale_posts'  => $results['stale_posts'],
         );
 
-        wp_remote_post( MSH_API::BASE_URL . '/freshness-report', array(
+        wp_remote_post( MSH_SEO_API::BASE_URL . '/freshness-report', array(
             'timeout' => 30,
             'headers' => array(
                 'Content-Type'  => 'application/json',
@@ -273,7 +280,7 @@ class MSH_Freshness {
      * @return array
      */
     public static function add_freshness_column( $columns ) {
-        $columns['msh_freshness'] = __( 'Freshness', 'msh-seo' );
+        $columns['msh_seo_freshness'] = __( 'Freshness', 'msh-seo' );
         return $columns;
     }
 
@@ -284,7 +291,7 @@ class MSH_Freshness {
      * @param int    $post_id Post ID.
      */
     public static function render_freshness_column( $column, $post_id ) {
-        if ( 'msh_freshness' !== $column ) {
+        if ( 'msh_seo_freshness' !== $column ) {
             return;
         }
 
@@ -324,7 +331,7 @@ class MSH_Freshness {
      * @return array
      */
     public static function make_freshness_sortable( $columns ) {
-        $columns['msh_freshness'] = 'msh_freshness';
+        $columns['msh_seo_freshness'] = 'msh_seo_freshness';
         return $columns;
     }
 
@@ -337,7 +344,7 @@ class MSH_Freshness {
         if ( ! is_admin() || ! $query->is_main_query() ) {
             return;
         }
-        if ( 'msh_freshness' === $query->get( 'orderby' ) ) {
+        if ( 'msh_seo_freshness' === $query->get( 'orderby' ) ) {
             $query->set( 'meta_key', self::META_SCORE );
             $query->set( 'orderby',  'meta_value_num' );
         }
@@ -357,7 +364,7 @@ class MSH_Freshness {
             return;
         }
 
-        $stale = (int) get_option( 'msh_freshness_stale_count', 0 );
+        $stale = (int) get_option( 'msh_seo_freshness_stale_count', 0 );
 
         if ( $stale < 1 ) {
             return;
@@ -370,40 +377,11 @@ class MSH_Freshness {
                 __( 'MSH SEO: %d posts need refresh', 'msh-seo' ),
                 $stale
             ),
-            'href'  => admin_url( 'edit.php?orderby=msh_freshness&order=asc' ),
+            'href'  => admin_url( 'edit.php?orderby=msh_seo_freshness&order=asc' ),
             'meta'  => array(
                 'class' => 'msh-freshness-alert',
             ),
         ) );
     }
 
-    /* ------------------------------------------------------------------
-     * Inline CSS
-     * ----------------------------------------------------------------*/
-
-    /**
-     * Print badge + admin-bar styles.
-     */
-    public static function admin_inline_css() {
-        ?>
-        <style>
-            .msh-freshness-badge {
-                display: inline-block;
-                padding: 2px 8px;
-                border-radius: 3px;
-                font-size: 12px;
-                font-weight: 600;
-                line-height: 1.6;
-                white-space: nowrap;
-            }
-            #wp-admin-bar-msh-freshness-notice .ab-item {
-                color: #fff !important;
-                background: #dc2626 !important;
-            }
-            #wp-admin-bar-msh-freshness-notice:hover .ab-item {
-                background: #b91c1c !important;
-            }
-        </style>
-        <?php
-    }
 }

@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Admin {
+class MSH_SEO_Admin {
 
     /**
      * Initialize admin hooks.
@@ -17,8 +17,8 @@ class MSH_Admin {
     public static function init() {
         add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
         add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
-        add_action( 'wp_ajax_msh_verify_connection', array( __CLASS__, 'ajax_verify_connection' ) );
-        add_action( 'wp_ajax_msh_disconnect', array( __CLASS__, 'ajax_disconnect' ) );
+        add_action( 'wp_ajax_msh_seo_verify_connection', array( __CLASS__, 'ajax_verify_connection' ) );
+        add_action( 'wp_ajax_msh_seo_disconnect', array( __CLASS__, 'ajax_disconnect' ) );
     }
 
     /**
@@ -41,13 +41,28 @@ class MSH_Admin {
             MSH_SEO_VERSION
         );
 
-        // Use jQuery as the base handle — inline script attaches to it
-        wp_add_inline_script( 'jquery', self::get_inline_admin_js() );
-
-        wp_localize_script( 'jquery', 'mshAdmin', array(
+        // An empty-source handle of our own carries the shared admin script and
+        // its data, rather than attaching them to WordPress's jQuery handle.
+        wp_register_script( 'msh-seo-admin', false, array( 'jquery' ), MSH_SEO_VERSION, true );
+        wp_enqueue_script( 'msh-seo-admin' );
+        wp_add_inline_script( 'msh-seo-admin', self::get_inline_admin_js() );
+        wp_localize_script( 'msh-seo-admin', 'mshSeoAdmin', array(
             'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-            'nonce'   => wp_create_nonce( 'msh_admin_nonce' ),
+            'nonce'   => wp_create_nonce( 'msh_seo_admin_nonce' ),
         ) );
+
+        if ( 'msh-seo_page_msh-seo-analytics' === $hook ) {
+            wp_enqueue_style( 'msh-seo-analytics', MSH_SEO_URL . 'assets/css/analytics.css', array(), MSH_SEO_VERSION );
+            wp_enqueue_script( 'msh-seo-analytics', MSH_SEO_URL . 'assets/js/analytics.js', array(), MSH_SEO_VERSION, true );
+            wp_localize_script( 'msh-seo-analytics', 'mshSeoAnalytics', array(
+                'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+                'nonce'   => wp_create_nonce( 'msh_seo_analytics_nonce' ),
+            ) );
+        }
+
+        if ( 'msh-seo_page_msh-seo-autopilot' === $hook ) {
+            wp_enqueue_script( 'msh-seo-autopilot', MSH_SEO_URL . 'assets/js/autopilot.js', array( 'jquery', 'msh-seo-admin' ), MSH_SEO_VERSION, true );
+        }
     }
 
     /**
@@ -84,6 +99,12 @@ class MSH_Admin {
             'sanitize_callback' => 'rest_sanitize_boolean',
         ) );
 
+        register_setting( 'msh_seo_settings', 'msh_seo_indexnow_enabled', array(
+            'type'              => 'boolean',
+            'default'           => true,
+            'sanitize_callback' => 'rest_sanitize_boolean',
+        ) );
+
         // Connection section
         add_settings_section(
             'msh_seo_connection',
@@ -109,6 +130,18 @@ class MSH_Admin {
             array(
                 'name'        => 'msh_seo_enable_meta',
                 'description' => __( 'Output SEO meta tags in the page head. <strong style="color:#16a34a;">Recommended: ON</strong> — Adds meta descriptions, Open Graph (Facebook/LinkedIn previews), and Twitter Cards to all your pages. Turn OFF only if another SEO plugin handles meta tags.', 'msh-seo' ),
+            )
+        );
+
+        add_settings_field(
+            'msh_seo_indexnow_enabled',
+            __( 'IndexNow', 'msh-seo' ),
+            array( __CLASS__, 'render_checkbox_field' ),
+            'msh-seo',
+            'msh_seo_general',
+            array(
+                'name'        => 'msh_seo_indexnow_enabled',
+                'description' => __( 'When a post is published or updated, send its URL to IndexNow (api.indexnow.org), which Bing, Yandex, Seznam and Naver use to find new pages quickly. Only your site\'s URLs are sent. Needs no account.', 'msh-seo' ),
             )
         );
 
@@ -167,6 +200,11 @@ class MSH_Admin {
             'default'           => '',
             'sanitize_callback' => array( __CLASS__, 'sanitize_profiles' ),
         ) );
+        register_setting( 'msh_seo_settings', MSH_SEO_Tracking::OPTION, array(
+            'type'              => 'string',
+            'default'           => '',
+            'sanitize_callback' => array( __CLASS__, 'sanitize_measurement_id' ),
+        ) );
         register_setting( 'msh_seo_settings', 'msh_seo_google_indexing_key', array(
             'type'              => 'string',
             'default'           => '',
@@ -188,7 +226,7 @@ class MSH_Admin {
             'msh_seo_features',
             array(
                 'name'        => 'msh_seo_cta_enabled',
-                'description' => __( 'Automatically add an intent-personalized call-to-action to the end of every post. <strong style="color:#16a34a;">Recommended: ON</strong> — The CTA adapts its message to each visitor and feeds conversion data back to MSH. Place it manually anywhere with the <code>[msh_cta]</code> shortcode.', 'msh-seo' ),
+                'description' => __( 'Automatically add an intent-personalized call-to-action to the end of every post. <strong style="color:#16a34a;">Recommended: ON</strong> — The CTA adapts its message to each visitor and feeds conversion data back to MSH. Place it manually anywhere with the <code>[msh_seo_cta]</code> shortcode.', 'msh-seo' ),
             )
         );
 
@@ -202,6 +240,19 @@ class MSH_Admin {
                 'name'        => 'msh_seo_social_profiles',
                 'placeholder' => "https://www.linkedin.com/company/...\nhttps://x.com/...",
                 'description' => __( 'One URL per line — your official social / authority profiles. Added to Organization schema as <code>sameAs</code> to strengthen your knowledge-graph identity.', 'msh-seo' ),
+            )
+        );
+
+        add_settings_field(
+            MSH_SEO_Tracking::OPTION,
+            __( 'Google Analytics', 'msh-seo' ),
+            array( __CLASS__, 'render_text_field' ),
+            'msh-seo',
+            'msh_seo_features',
+            array(
+                'name'        => MSH_SEO_Tracking::OPTION,
+                'placeholder' => 'G-XXXXXXXXXX',
+                'description' => __( 'Your GA4 measurement id. When set, every front-end page loads Google\'s gtag.js and reports page views to your own Google Analytics property. A connected MSH dashboard can fill this in for you. Leave empty to stop loading the tag.', 'msh-seo' ),
             )
         );
 
@@ -287,11 +338,41 @@ class MSH_Admin {
     }
 
     /**
+     * Keep a GA4 measurement id, clear it, or refuse anything else.
+     *
+     * @param mixed $value Submitted value.
+     * @return string
+     */
+    public static function sanitize_measurement_id( $value ) {
+        $value = strtoupper( trim( sanitize_text_field( (string) $value ) ) );
+        if ( '' === $value || preg_match( MSH_SEO_Tracking::PATTERN, $value ) ) {
+            return $value;
+        }
+        add_settings_error( MSH_SEO_Tracking::OPTION, 'invalid_measurement_id', __( 'That is not a GA4 measurement id. It should look like G-XXXXXXXXXX.', 'msh-seo' ) );
+        return (string) get_option( MSH_SEO_Tracking::OPTION, '' );
+    }
+
+    /**
+     * Render a single-line text setting.
+     *
+     * @param array $args name, placeholder, description.
+     */
+    public static function render_text_field( $args ) {
+        $name = $args['name'];
+        ?>
+        <input type="text" name="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( (string) get_option( $name, '' ) ); ?>" class="regular-text code" placeholder="<?php echo esc_attr( $args['placeholder'] ?? '' ); ?>" />
+        <?php if ( ! empty( $args['description'] ) ) : ?>
+            <p class="description" style="max-width:640px;"><?php echo wp_kses_post( $args['description'] ); ?></p>
+        <?php endif; ?>
+        <?php
+    }
+
+    /**
      * Render the connection section HTML.
      */
     public static function render_connection_section() {
-        $is_connected    = MSH_Auth::is_connected();
-        $connection_info = MSH_Auth::get_connection_info();
+        $is_connected    = MSH_SEO_Auth::is_connected();
+        $connection_info = MSH_SEO_Auth::get_connection_info();
         ?>
         <div id="msh-connection-panel" class="msh-panel">
             <?php if ( $is_connected && $connection_info ) : ?>
@@ -415,7 +496,7 @@ class MSH_Admin {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
         }
-        $connected = MSH_Auth::is_connected();
+        $connected = MSH_SEO_Auth::is_connected();
         ?>
         <div class="wrap msh-settings-wrap">
             <div class="msh-hero">
@@ -431,7 +512,7 @@ class MSH_Admin {
 
             <?php
             // Bulk-index notice.
-            $bulk = isset( $_GET['msh_bulk'] ) ? absint( $_GET['msh_bulk'] ) : -1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            $bulk = isset( $_GET['msh_seo_bulk'] ) ? absint( $_GET['msh_seo_bulk'] ) : -1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             if ( $bulk >= 0 ) {
                 echo '<div class="notice notice-success is-dismissible"><p>' .
                     sprintf(
@@ -464,7 +545,7 @@ class MSH_Admin {
      * Feature-status card: which world-class features are live.
      */
     private static function render_status_card( $connected ) {
-        $google_status = MSH_Indexing::google_status();
+        $google_status = MSH_SEO_Indexing::google_status();
         if ( 'local' === $google_status ) {
             $indexing_desc = 'IndexNow + Google API (this site)';
         } elseif ( 'central' === $google_status ) {
@@ -513,7 +594,7 @@ class MSH_Admin {
                 echo '</div>';
                 return;
             }
-            $data = MSH_API::ai_visibility();
+            $data = MSH_SEO_API::ai_visibility();
             if ( is_wp_error( $data ) || ! isset( $data['checked'] ) || (int) $data['checked'] === 0 ) {
                 echo '<p class="msh-card__hint">' . esc_html__( 'No AI-citation data yet. MSH checks weekly — come back soon.', 'msh-seo' ) . '</p>';
                 echo '</div>';
@@ -550,8 +631,8 @@ class MSH_Admin {
      * Indexing card: recent submissions + bulk re-submit.
      */
     private static function render_indexing_card() {
-        $recent = class_exists( 'MSH_Indexing' ) ? MSH_Indexing::get_recent_submissions() : array();
-        $gstatus = class_exists( 'MSH_Indexing' ) ? MSH_Indexing::google_status() : 'off';
+        $recent = class_exists( 'MSH_SEO_Indexing' ) ? MSH_SEO_Indexing::get_recent_submissions() : array();
+        $gstatus = class_exists( 'MSH_SEO_Indexing' ) ? MSH_SEO_Indexing::google_status() : 'off';
         if ( 'local' === $gstatus ) {
             $glabel = 'Google API (this site)';
         } elseif ( 'central' === $gstatus ) {
@@ -595,7 +676,7 @@ class MSH_Admin {
      * AJAX: Verify API key and establish connection.
      */
     public static function ajax_verify_connection() {
-        check_ajax_referer( 'msh_admin_nonce', 'nonce' );
+        check_ajax_referer( 'msh_seo_admin_nonce', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( array( 'message' => __( 'Permission denied.', 'msh-seo' ) ) );
@@ -607,12 +688,12 @@ class MSH_Admin {
             wp_send_json_error( array( 'message' => __( 'Please enter an API key.', 'msh-seo' ) ) );
         }
 
-        MSH_Auth::save_key( $api_key );
+        MSH_SEO_Auth::save_key( $api_key );
 
-        $result = MSH_Auth::verify_connection();
+        $result = MSH_SEO_Auth::verify_connection();
 
         if ( is_wp_error( $result ) ) {
-            MSH_Auth::delete_key();
+            MSH_SEO_Auth::delete_key();
             wp_send_json_error( array( 'message' => $result->get_error_message() ) );
         }
 
@@ -626,13 +707,13 @@ class MSH_Admin {
      * AJAX: Disconnect from MSH.
      */
     public static function ajax_disconnect() {
-        check_ajax_referer( 'msh_admin_nonce', 'nonce' );
+        check_ajax_referer( 'msh_seo_admin_nonce', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( array( 'message' => __( 'Permission denied.', 'msh-seo' ) ) );
         }
 
-        MSH_Auth::delete_key();
+        MSH_SEO_Auth::delete_key();
         wp_send_json_success( array( 'message' => __( 'Disconnected.', 'msh-seo' ) ) );
     }
 
@@ -657,9 +738,9 @@ jQuery(function($) {
         spinner.addClass('is-active');
         msg.html('');
 
-        $.post(mshAdmin.ajaxUrl, {
-            action: 'msh_verify_connection',
-            nonce: mshAdmin.nonce,
+        $.post(mshSeoAdmin.ajaxUrl, {
+            action: 'msh_seo_verify_connection',
+            nonce: mshSeoAdmin.nonce,
             api_key: key
         }, function(response) {
             btn.prop('disabled', false);
@@ -681,9 +762,9 @@ jQuery(function($) {
     $('#msh-disconnect-btn').on('click', function() {
         if (!confirm('Disconnect from Marketing So High?')) return;
 
-        $.post(mshAdmin.ajaxUrl, {
-            action: 'msh_disconnect',
-            nonce: mshAdmin.nonce
+        $.post(mshSeoAdmin.ajaxUrl, {
+            action: 'msh_seo_disconnect',
+            nonce: mshSeoAdmin.nonce
         }, function(response) {
             if (response.success) {
                 location.reload();
@@ -695,4 +776,4 @@ JS;
     }
 }
 
-MSH_Admin::init();
+MSH_SEO_Admin::init();

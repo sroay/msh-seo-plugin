@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Image_SEO {
+class MSH_SEO_Image_SEO {
 
     /**
      * Initialize Image SEO hooks.
@@ -128,7 +128,7 @@ class MSH_Image_SEO {
         // If attached to a post, try to use focus keyword or post title.
         $parent_id = $attachment->post_parent;
         if ( $parent_id ) {
-            $focus_keyword = get_post_meta( $parent_id, '_msh_focus_keyword', true );
+            $focus_keyword = get_post_meta( $parent_id, '_msh_seo_focus_keyword', true );
             if ( ! empty( $focus_keyword ) ) {
                 // Count existing images on this post to create a unique alt.
                 $existing = self::count_post_images( $parent_id );
@@ -336,7 +336,7 @@ class MSH_Image_SEO {
         }
 
         // Prefer focus keyword.
-        $focus_keyword = get_post_meta( $post_id, '_msh_focus_keyword', true );
+        $focus_keyword = get_post_meta( $post_id, '_msh_seo_focus_keyword', true );
         if ( ! empty( $focus_keyword ) ) {
             return sanitize_text_field( $focus_keyword );
         }

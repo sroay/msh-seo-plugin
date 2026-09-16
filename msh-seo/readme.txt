@@ -1,266 +1,189 @@
 === MSH SEO ===
 Contributors: technobelievesolutions
-Tags: seo, ai seo, schema markup, sitemap, content optimization
+Tags: seo, schema markup, sitemap, redirects, indexnow
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.1
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Free SEO tools for WordPress with optional AI-powered features via Marketing So High.
+On-page SEO, schema, sitemaps and redirects that work without an account, with optional AI features from Marketing So High.
 
 == Description ==
 
-MSH SEO provides a complete on-page SEO toolkit for WordPress, with both free local analysis and optional AI-powered features through the Marketing So High platform.
+MSH SEO is an on-page SEO toolkit for WordPress. Everything in the first list below runs inside your site and needs no account. The features in the second list use the Marketing So High service and only work after you connect the plugin with an API key.
 
-= Free Features (no account required) =
+= Works without an account =
 
-**SEO Analysis & Scoring**
-* Real-time SEO score with 14 on-page checks
-* Focus keyword tracking and optimization
-* Keyword density, readability, and heading hierarchy analysis
-* Internal/external link counting and image alt text checking
+**SEO analysis in the editor**
+* SEO score from 14 on-page checks, calculated in your browser and on your server
+* Focus keyword, keyword density, readability and heading checks
+* Internal and external link counts, image alt text checks
 
-**Meta Tags & SERP Preview**
-* Meta title and description editor with character counters
-* Live SERP preview showing how your page appears in Google
-* Open Graph and Twitter Card meta tags for social sharing
-* Social preview panel (Facebook/LinkedIn + Twitter/X mockups)
+**Meta tags and social previews**
+* Meta title and description editor with a live search result preview
+* Open Graph and Twitter Card tags
+* Facebook, LinkedIn and X preview panel
 
-**Schema Markup**
-* Automatic JSON-LD structured data (Article, FAQ, HowTo)
-* Per-post schema type selector with 14 options
-* WooCommerce Product schema with GTIN, MPN, and Brand fields
-* Variable product support with hasVariant schema
+**Schema markup**
+* JSON-LD structured data (Article, FAQ, HowTo and more), with a per-post schema type selector
+* WooCommerce Product schema with GTIN, MPN and brand fields, including variable products
 
 **Technical SEO**
-* XML sitemap with automatic search engine pinging
-* 301/302 redirect manager with 404 logging
-* Noindex controls for archives, tags, and author pages
-* Breadcrumb navigation with JSON-LD (shortcode: [msh_breadcrumbs])
-* Image SEO: auto-rename uploads, auto-set alt text from context
+* XML sitemaps
+* 301 and 302 redirect manager with a 404 log
+* Noindex controls for date archives, tags and author pages
+* Breadcrumbs with JSON-LD (shortcode: [msh_seo_breadcrumbs])
+* Image SEO: descriptive file names and alt text on upload
+* llms.txt and llms-full.txt, and robots.txt rules for AI crawlers
+* Checks under Tools > Site Health for the redirect engine and plugin conflicts
 
-**Instant Indexing**
-* IndexNow integration (Bing, Yandex, Naver, Seznam)
-* Automatic URL submission on post publish/update
-* Submission log with status tracking
+**Content tools**
+* Weekly content freshness scan with a badge in the Posts list
+* Answer engine (AEO) score: 11 checks for how citable a post is
+* Import titles and descriptions from Yoast SEO, Rank Math and All in One SEO, without touching their data
+* SEO overview page and dashboard widget
 
-**Content Freshness**
-* Weekly content freshness scanner
-* Freshness scores based on age, content quality, and statistics
-* Admin bar notice for stale content
+**Instant indexing (sends data to IndexNow)**
+* When a post is published or updated, its URL is submitted to IndexNow so Bing, Yandex, Seznam, Naver and other participating search engines can find it quickly. This is on by default and can be switched off under MSH SEO > Settings. See External services below.
 
-**AI Crawler Management**
-* llms.txt and llms-full.txt for AI engine discoverability
-* Robots.txt enhancements for AI crawlers (GPTBot, ClaudeBot, etc.)
+**Google Analytics tag (optional)**
+* Enter your GA4 measurement id under MSH SEO > Settings and the plugin adds Google's standard tag to your pages. Nothing loads until you do. See External services below.
 
-**Answer Engine Optimization (AEO)**
-* 11-point citability score for AI search engines
-* FAQ, definition, statistics, and E-E-A-T signal checks
+= Needs a Marketing So High account =
 
-**SEO Import**
-* Non-destructive import from Yoast SEO, Rank Math, and AIOSEO
-* Preview before importing, never overwrites existing MSH data
+These features send data to Marketing So High and only work once you enter an API key under MSH SEO > Settings. A free plan includes 50 AI operations a month.
 
-**Analytics Dashboard**
-* SEO health overview with score distribution chart
-* Missing meta description and keyword tracking
-* IndexNow submission history
-* Quick action links to optimize worst posts
+* AI analysis of the post you are editing, with suggested fixes
+* AI-generated meta titles and descriptions
+* Keyword data for your focus keyword
+* Internal link suggestions drawn from your own published posts
+* Automatic repair of broken links: 404s are matched to the right page and redirects are created for you
+* Smart call-to-action blocks, with conversion tracking
+* Sending a post to the social channels connected in your MSH account
+* Publishing articles written in the MSH dashboard straight to WordPress, and refreshing older posts from it (Autopilot)
 
-**WooCommerce SEO**
-* Product-specific SEO scoring (14 checks, 100 points)
-* Custom product fields: GTIN, MPN, Brand
-* Product schema with offers, ratings, and reviews
-* Variable product support with per-variation schema
+= Source code and build tools =
 
-= AI-Powered Features (requires free MSH account) =
-
-* AI content analysis with specific fix suggestions
-* AI-generated meta titles and descriptions (multiple options)
-* Keyword research data (volume, difficulty, CPC, intent)
-* SERP competitor analysis
-* One-click content distribution to 22 platforms
-* Full article generation with SEO optimization
-* Site intelligence scanning with AI strategy recommendations
-
-= External Service =
-
-This plugin optionally connects to the Marketing So High platform (https://marketingsohigh.com) to provide AI-powered SEO features. This connection is entirely optional and the plugin provides full local SEO analysis without it.
-
-When connected, the following data is sent to the MSH API:
-
-* Your site URL (for verification)
-* Post title, content, and focus keyword (for AI analysis)
-
-Data is processed according to the Marketing So High [Privacy Policy](https://marketingsohigh.com/privacy).
-[Terms of Service](https://marketingsohigh.com/terms).
-
-No data is sent unless you explicitly connect your MSH account and trigger an AI feature.
+The editor sidebar is written in React and compiled with @wordpress/scripts. The human-readable source is included in the plugin's `src` folder and published at https://github.com/sroay/msh-seo-plugin. To rebuild `build/index.js`, run `npm install` and then `npm run build` in the plugin folder.
 
 == Installation ==
 
-1. Upload the `msh-seo` folder to the `/wp-content/plugins/` directory
-2. Activate the plugin through the 'Plugins' menu in WordPress
-3. Start editing any post to see the SEO sidebar in Gutenberg
-4. (Optional) Go to MSH SEO settings and connect your Marketing So High account for AI features
+1. Upload the `msh-seo` folder to the `/wp-content/plugins/` directory, or install the plugin from the Plugins screen.
+2. Activate the plugin through the Plugins menu in WordPress.
+3. Open any post in the block editor to see the MSH SEO sidebar.
+4. Optional: go to MSH SEO > Settings and enter a Marketing So High API key to turn on the AI features.
 
 == Frequently Asked Questions ==
 
 = Do I need a Marketing So High account? =
 
-No. Every local SEO feature works without one, and the plugin contacts nothing until you connect. An account is only needed for the two AI features.
+No. Everything listed under "Works without an account" runs without one. An account is only needed for the features listed under "Needs a Marketing So High account".
+
+= Does the plugin send any data without an account? =
+
+Only in two cases, both described in External services below. IndexNow submissions send the URL of a post when it is published or updated; this is on by default and can be switched off under MSH SEO > Settings. The Google Analytics tag loads only if you enter a measurement id. Nothing is sent to Marketing So High until you enter an API key.
 
 = Is there a free plan? =
 
-Yes. The free plan includes 50 AI operations a month. Once those are used the AI features pause until the next month; nothing else stops working.
+Yes. The free Marketing So High plan includes 50 AI operations a month. When they are used up the AI features pause until the next month; nothing else stops working.
 
 = Does this conflict with other SEO plugins? =
 
-No. If Yoast SEO, Rank Math, All in One SEO, SEOPress, The SEO Framework or Slim SEO is active, MSH SEO detects it and automatically steps back from meta tags, schema and sitemaps so you never get duplicates. You will see a notice telling you this has happened.
+If Yoast SEO, Rank Math, All in One SEO, SEOPress, The SEO Framework or Slim SEO is active, MSH SEO detects it and stops printing meta tags, schema and sitemaps, so pages never get duplicates. A notice tells you when this happens. Redirects, the 404 log, Site Health checks and the AI features keep working.
 
-Everything that does not overlap keeps running: redirects, the 404 log and its automatic repair, the health checks and the AI tools. That means you can run MSH SEO alongside your existing SEO plugin purely for the broken-link repair, which is the thing no other free plugin does.
-
-If you would rather switch over completely, use MSH SEO > Import SEO to bring your titles and descriptions across from Yoast or Rank Math, then deactivate the old plugin. MSH SEO takes over the head output automatically once it is gone.
-
-= Which features are free, and which need an account? =
-
-Free forever, no account, nothing sent anywhere:
-
-* Meta titles and descriptions, Open Graph and Twitter cards
-* Schema markup and breadcrumbs
-* XML sitemaps
-* Redirects, the 404 log, and automatic repair of broken links
-* Health checks under Tools > Site Health
-
-Needs a free Marketing So High account (50 AI operations a month):
-
-* AI-generated meta titles and descriptions
-* AI page analysis
-
-Nothing is sent to Marketing So High until you enter an API key. See the External services section below for exactly what is sent and when.
+To switch over completely, use MSH SEO > Import SEO to copy your titles and descriptions from Yoast SEO or Rank Math, then deactivate the old plugin.
 
 = How do I check whether the plugin is working? =
 
-Go to Tools > Site Health. MSH SEO adds checks there for its connection, its redirect engine and any plugin conflicts. The Info tab has an MSH SEO section with everything a support request would need — please paste it if you report a problem.
+Go to Tools > Site Health. MSH SEO adds checks for its connection, its redirect engine and plugin conflicts. The Info tab has an MSH SEO section to paste into a support request.
 
 = The plugin's scheduled tasks do not seem to run =
 
-WordPress only runs scheduled tasks when someone visits the site, so a site with very little traffic can go a long time without them firing. This is a WordPress behaviour rather than a plugin fault. Your host may offer a real system cron, which is more reliable.
+WordPress runs scheduled tasks when someone visits the site, so a site with very little traffic can go a long time without them. Your host may offer a real system cron, which is more reliable.
 
 = How do I remove it completely? =
 
-Deactivate and delete the plugin in the usual way. To also remove its data, drop the tables ending in msh_redirects and msh_404_log, and delete the options beginning msh_.
+Deactivate and delete the plugin. To also remove its data, drop the database tables ending in msh_seo_redirects and msh_seo_404_log, and delete the options whose names begin with msh_seo_.
 
 = What is IndexNow? =
 
-IndexNow is a protocol supported by Bing, Yandex, Naver, and Seznam that lets you instantly notify search engines when content is published or updated. MSH SEO automatically submits URLs when you publish a post.
+IndexNow is an open protocol that lets a site tell search engines a page has been added or changed, instead of waiting for them to crawl it. It is supported by Bing, Yandex, Seznam, Naver and others.
 
 = Does it work with WooCommerce? =
 
-Yes. MSH SEO adds Product schema markup, GTIN/MPN/Brand fields, and product-specific SEO scoring when WooCommerce is active.
+Yes. When WooCommerce is active, MSH SEO adds Product schema, GTIN, MPN and brand fields, and product-specific SEO checks.
 
 = What is AEO? =
 
-Answer Engine Optimization helps your content get cited by AI search engines like Google AI Overview, ChatGPT, and Perplexity. MSH SEO scores your content across 11 citability checks.
+Answer Engine Optimization is about making content easy for AI search tools such as Google AI Overviews, ChatGPT and Perplexity to cite. MSH SEO scores posts on 11 checks for this.
 
 == Screenshots ==
 
-1. Gutenberg sidebar with SEO score, checks, and social preview
-2. Meta title and description editor with live SERP preview
-3. Schema type selector with 14 options
-4. SEO Analytics dashboard with score distribution
-5. Redirect manager with 404 logging
-6. WordPress dashboard SEO overview widget
+1. Block editor sidebar with SEO score, checks and social preview
+2. Meta title and description editor with a live search result preview
+3. Schema type selector
+4. SEO overview page
+5. Redirect manager with the 404 log
+6. Dashboard widget
 
 == External services ==
 
-This plugin connects to five external services. The AI features send nothing until you explicitly
-connect the plugin by entering an API key. Three things happen without a key and are described
-below: the search engine sitemap pings, the IndexNow submission, and the Google Analytics tag.
+MSH SEO connects to the services below. Each entry says what is sent, when, and whether you can turn it off. The plugin also makes requests to your own site, for example to confirm the IndexNow key file is reachable; those stay between your server and your site.
 
-**1. Marketing So High (app.marketingsohigh.com)**
+**1. IndexNow (api.indexnow.org)**
 
-The plugin's AI features are provided by Marketing So High. Data is only ever sent once you have
-entered an API key under MSH SEO > Settings > Connection. Without a key the plugin runs its local
-SEO features and contacts nothing.
+Used to tell search engines about new and updated posts. When a post is published or updated, the plugin sends your site's hostname, the post's URL, your sitemap URL, and a key the plugin generates for your site. The key is also served at yoursite.com/KEY.txt so the search engines can confirm the submission came from your site. IndexNow shares each submission with the participating search engines, including Bing, Yandex, Seznam and Naver. No account is needed. This is on by default and can be switched off under MSH SEO > Settings > IndexNow.
 
-What is sent, and when:
-
-* Daily health report: your site URL, the plugin/WordPress/PHP versions, whether each feature is
-  working, the number of redirect rules you have, and the URLs in your 404 log with their hit
-  counts. Also the URLs and titles of your published posts and pages, so the service can work out
-  where a broken link should point.
-* Weekly content report: for each published post, its title, URL, slug, publish and modified dates,
-  word count and a count of its headings, links and images.
-* When you use an AI feature: the content of the post you are working on, so it can be analysed or
-  a meta title and description generated for it.
-* Conversion events, if you enable the call-to-action feature: which CTA was shown and clicked, and
-  on which page.
-* Newsletter signups, if a newsletter is configured for your site: a signup form appears under each
-  post and the visitor's email address is sent from their browser to the newsletter's double
-  opt-in endpoint, along with the page they signed up from. The visitor receives a confirmation
-  email and is not subscribed until they click it. No form appears, and no address is ever sent,
-  unless a newsletter endpoint has been delivered to your site.
-
-Apart from newsletter signups the visitor entered themselves, no visitor personal data, comment
-content, user accounts, email addresses or passwords are ever sent.
-
-Service: https://marketingsohigh.com
-Terms of Service: https://marketingsohigh.com/terms
-Privacy Policy: https://marketingsohigh.com/privacy
-
-**2. Search engine sitemap pings (www.google.com, www.bing.com)**
-
-When you publish or update a post, the plugin notifies Google and Bing that your sitemap has
-changed, by requesting https://www.google.com/ping?sitemap=YOUR_SITEMAP_URL and
-https://www.bing.com/ping?sitemap=YOUR_SITEMAP_URL. The only data sent is your own sitemap URL.
-This happens whether or not you have connected an API key, and can be turned off under
-MSH SEO > Settings.
-
-Terms of Service: https://policies.google.com/terms
-Privacy Policy: https://policies.google.com/privacy
-Bing Terms of Use: https://www.bing.com/new/termsofuse
+Terms of Service: https://www.indexnow.org/terms
 Microsoft Privacy Statement: https://privacy.microsoft.com/privacystatement
+Yandex Privacy Policy: https://yandex.com/legal/confidential/
+Seznam Privacy Policy: https://o-seznam.cz/pravni-informace/ochrana-udaju/
+Naver Privacy Policy: https://www.naver.com/policy/privacy
+
+**2. Google Analytics (www.googletagmanager.com)**
+
+Off until you enter a GA4 measurement id under MSH SEO > Settings > Google Analytics (a connected Marketing So High dashboard can fill it in for you). Once an id is set, every front-end page loads Google's gtag.js and your visitors' page views are reported to your own Google Analytics property. Because this sends visitor data to Google under your account, your privacy policy should mention it and any consent tool you use should cover it. Clear the field to stop the tag loading.
+
+Terms of Service: https://marketingplatform.google.com/about/analytics/terms/us/
+Privacy Policy: https://policies.google.com/privacy
 
 **3. Google Indexing API (oauth2.googleapis.com, indexing.googleapis.com)**
 
-Optional, and off unless you supply your own Google service account credentials. When enabled, the
-plugin asks Google to index or re-index a specific URL on your site. Only the URL is sent, together
-with your own credentials to authenticate the request.
+Off unless you paste your own Google Cloud service-account key under MSH SEO > Settings > Google Indexing API. When a post is published or updated, the plugin sends the post's URL to Google, authenticated with your key.
 
 Terms of Service: https://policies.google.com/terms
 Privacy Policy: https://policies.google.com/privacy
 
-**4. Google Analytics (www.googletagmanager.com)**
+**4. Marketing So High (app.marketingsohigh.com)**
 
-Optional, and off until a Google Analytics measurement id (G-XXXXXXXXXX) is stored for your site.
-You can set one yourself, or let the connected Marketing So High dashboard install the id from your
-own Google Analytics property. Once an id is present, every front-end page loads Google's standard
-gtag.js script and your visitors' page views are reported to YOUR Google Analytics property.
+Provides the features listed under "Needs a Marketing So High account". Nothing is sent until you enter an API key under MSH SEO > Settings. After that:
 
-This is the same tag Google's own installer would add. It sends visitor data to Google under your
-Analytics account, so your site's privacy policy should say so, and any consent banner you run
-should cover it. Remove the measurement id under MSH SEO > Settings to stop the tag loading.
+* Daily health report: your site URL; the plugin, WordPress and PHP versions; whether each feature is working; the number of redirect rules; the URLs in your 404 log with their hit counts, referrers and user agents; and the URLs and titles of your published posts and pages, so broken links can be matched to the right page.
+* Weekly content reports: for each published post, its title, URL, slug, publish and modified dates, word count, and counts of headings, links and images; plus a summary of how many posts are fresh or stale, with the stale ones listed.
+* When you use an AI feature in the editor: the post's title, content, focus keyword and URL; for internal link suggestions, also the titles and URLs of your recent published posts and pages.
+* Smart call-to-action blocks: the plugin fetches their wording from Marketing So High, and forwards which block a visitor saw or clicked and on which page. No visitor identity is sent.
+* Sending a post to your social channels: the post's title, excerpt, text, URL, featured image URL and the channels you picked.
+* Newsletter form: shown under posts only if your Marketing So High account has a newsletter. A visitor who fills it in sends their email address and the site's hostname from their own browser to the newsletter's double opt-in endpoint, and is not subscribed until they confirm by email.
+* When the dashboard publishes an article to your site, the plugin downloads the article's featured image from the address the dashboard supplies.
 
-Service: https://marketingplatform.google.com/about/analytics/
-Terms of Service: https://policies.google.com/terms
-Privacy Policy: https://policies.google.com/privacy
+No user accounts, passwords or comment content are sent.
 
-**5. IndexNow (api.indexnow.org)**
-
-When you publish or update a post, the plugin submits that URL to IndexNow, the shared protocol
-Bing, Yandex, Seznam and Naver use to learn about new pages immediately instead of waiting for a
-crawl. Sent: your site's hostname, the URL or URLs that changed, and a key the plugin generates for
-your site and serves at yoursite.com/KEY.txt so the search engines can confirm the submission came
-from you. No account and no API key are needed, so this works on a fresh install; turn it off under
-MSH SEO > Settings.
-
-Service: https://www.indexnow.org
-Documentation: https://www.indexnow.org/documentation
+Terms of Service: https://marketingsohigh.com/terms
+Privacy Policy: https://marketingsohigh.com/privacy
 
 == Changelog ==
+
+= 1.5.0 =
+* Changed: every option, post meta key, database table, transient, AJAX action, nonce and class now uses the msh_seo prefix, as WordPress.org requires. Existing data is moved to the new names automatically on the first page load after the update, including redirect rules, the 404 log and focus keywords.
+* Changed: all CSS and JavaScript is loaded with wp_enqueue_style and wp_enqueue_script from files in the assets folder. Nothing is printed inline any more.
+* Security: JSON-LD is encoded with JSON_HEX_TAG, so text containing a closing script tag cannot break out of the schema block.
+* Security: SEO meta fields and the local analysis and link suggestion endpoints now check that the user may edit the specific post, not just posts in general.
+* Fixed: sitemap requests no longer switch page caching off for every URL on the site.
+* Removed: the Google and Bing sitemap pings. Both endpoints were retired by the search engines and did nothing; IndexNow covers the same need.
+* New: settings to switch IndexNow off and to enter or remove a Google Analytics measurement id.
+* New: the source for the editor sidebar ships in the src folder, with build instructions in this readme.
 
 = 1.4.1 =
 * Fixed: on a headless site, IndexNow was told about WordPress's permalink (example.com/my-post/) instead of the address the front end serves (example.com/blog/my-post), so search engines were handed a redirect. Before submitting, the plugin now follows redirects on the live site and sends the address that answers. A bulk re-submit learns the pattern from one post of each type rather than checking every URL. Anything uncertain keeps the permalink.
@@ -312,7 +235,7 @@ Documentation: https://www.indexnow.org/documentation
 * Fixed: publishing is no longer slowed by indexing — IndexNow and Google pings now run out-of-band after publish instead of inside the save request.
 * Fixed: the connection check never runs during visitor page loads (admin-only, with a stampede lock) — the Smart CTA uses its own cached config.
 * Fixed: Internal Link Mesh no longer wraps a phrase that already sits inside another link (no more nested links).
-* Fixed: Speakable schema now activates for the [msh_answer] shortcode and block (previously only raw markup).
+* Fixed: Speakable schema now activates for the [msh_seo_answer] shortcode and block (previously only raw markup).
 * Fixed: the article "about"/"keywords" schema values no longer contain HTML entities (e.g. & rendered correctly for AI engines).
 
 = 1.0.1 =
@@ -322,8 +245,8 @@ Documentation: https://www.indexnow.org/documentation
 
 = 1.0.0 =
 * New: Internal Link Mesh — the editor suggests ranked internal links from your whole site's topic-cluster graph (via the MSH brain) and inserts them with one click.
-* New: Smart CTAs — an intent-personalized call-to-action (auto-appended or the [msh_cta] shortcode / block) that adapts its message to each visitor (search, returning, high-intent) and streams impression/click/conversion events back to MSH so your content engine learns what converts.
-* New: Answer Engine (AEO) upgrades — Speakable schema, an "about" entity + keywords on articles, Organization sameAs profiles, and a quotable "Quick answer" block ([msh_answer]) built for AI Overviews / ChatGPT citations.
+* New: Smart CTAs — an intent-personalized call-to-action (auto-appended or the [msh_seo_cta] shortcode / block) that adapts its message to each visitor (search, returning, high-intent) and streams impression/click/conversion events back to MSH so your content engine learns what converts.
+* New: Answer Engine (AEO) upgrades — Speakable schema, an "about" entity + keywords on articles, Organization sameAs profiles, and a quotable "Quick answer" block ([msh_seo_answer]) built for AI Overviews / ChatGPT citations.
 * New: AI Visibility — see whether AI answers actually cite your site, and which competitors they cite instead.
 * New: Google Indexing API support (service-account JSON) + bulk re-submit of all URLs, alongside the existing IndexNow instant indexing.
 * Redesigned admin console: a modern, branded dashboard with feature status, AI-visibility, and indexing at a glance.
@@ -379,6 +302,9 @@ Documentation: https://www.indexnow.org/documentation
 * JSON-LD schema markup (Article, FAQ, HowTo)
 
 == Upgrade Notice ==
+
+= 1.5.0 =
+Renames the plugin's stored data to the msh_seo prefix. The move happens automatically on the first page load after updating; no action is needed.
 
 = 0.6.0 =
 New Gutenberg sidebar panels: Social Preview, Schema Selector. Enhanced dashboard widget. Bug fixes.

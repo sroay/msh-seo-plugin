@@ -12,15 +12,32 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Distribution {
+class MSH_SEO_Distribution {
 
     public static function init() {
         add_action( 'add_meta_boxes', array( __CLASS__, 'add_meta_box' ) );
-        add_action( 'wp_ajax_msh_distribute_post', array( __CLASS__, 'ajax_distribute' ) );
+        add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+        add_action( 'wp_ajax_msh_seo_distribute_post', array( __CLASS__, 'ajax_distribute' ) );
+    }
+
+    /**
+     * Load the meta box script on the post editor when the box is shown.
+     *
+     * @param string $hook Current admin page.
+     */
+    public static function enqueue_assets( $hook ) {
+        if ( ! in_array( $hook, array( 'post.php', 'post-new.php' ), true ) || 'post' !== get_post_type() || ! MSH_SEO_Auth::is_connected() ) {
+            return;
+        }
+        wp_enqueue_script( 'msh-seo-distribution', MSH_SEO_URL . 'assets/js/distribution.js', array(), MSH_SEO_VERSION, true );
+        wp_localize_script( 'msh-seo-distribution', 'mshSeoDistribution', array(
+            'postId' => (int) get_the_ID(),
+            'nonce'  => wp_create_nonce( 'msh_seo_distribute_nonce' ),
+        ) );
     }
 
     public static function add_meta_box() {
-        if ( ! MSH_Auth::is_connected() ) {
+        if ( ! MSH_SEO_Auth::is_connected() ) {
             return;
         }
         add_meta_box(
@@ -45,17 +62,17 @@ class MSH_Distribution {
             'bluesky'    => 'Bluesky',
         );
 
-        $distributed = get_post_meta( $post->ID, '_msh_distributed_channels', true );
+        $distributed = get_post_meta( $post->ID, '_msh_seo_distributed_channels', true );
         $distributed = is_array( $distributed ) ? $distributed : array();
 
-        wp_nonce_field( 'msh_distribute_nonce', 'msh_distribute_nonce_field' );
+        wp_nonce_field( 'msh_seo_distribute_nonce', 'msh_seo_distribute_nonce_field' );
         ?>
         <div id="msh-distribution-box">
             <p class="description"><?php esc_html_e( 'Select channels to distribute this post to via MSH:', 'msh-seo' ); ?></p>
 
             <?php foreach ( $channels as $key => $label ) : ?>
                 <label style="display:block; margin: 4px 0;">
-                    <input type="checkbox" name="msh_channels[]" value="<?php echo esc_attr( $key ); ?>"
+                    <input type="checkbox" name="msh_seo_channels[]" value="<?php echo esc_attr( $key ); ?>"
                         <?php echo in_array( $key, $distributed, true ) ? 'disabled' : ''; ?> />
                     <?php echo esc_html( $label ); ?>
                     <?php if ( in_array( $key, $distributed, true ) ) : ?>
@@ -76,56 +93,11 @@ class MSH_Distribution {
             <div id="msh-distribute-result" style="margin-top: 8px;"></div>
         </div>
 
-        <script>
-        (function() {
-            var btn = document.getElementById('msh-distribute-btn');
-            if (!btn) return;
-
-            btn.addEventListener('click', function() {
-                var checks = document.querySelectorAll('input[name="msh_channels[]"]:checked');
-                if (!checks.length) {
-                    alert('Select at least one channel.');
-                    return;
-                }
-
-                var channels = [];
-                checks.forEach(function(c) { channels.push(c.value); });
-
-                btn.disabled = true;
-                btn.textContent = 'Distributing...';
-
-                var data = new FormData();
-                data.append('action', 'msh_distribute_post');
-                data.append('post_id', '<?php echo esc_js( $post->ID ); ?>');
-                data.append('channels', JSON.stringify(channels));
-                data.append('nonce', '<?php echo esc_js( wp_create_nonce( "msh_distribute_nonce" ) ); ?>');
-
-                fetch(ajaxurl, { method: 'POST', body: data })
-                    .then(function(r) { return r.json(); })
-                    .then(function(res) {
-                        var el = document.getElementById('msh-distribute-result');
-                        if (res.success) {
-                            el.textContent = res.data.message;
-                            el.style.color = '#46b450';
-                        } else {
-                            el.textContent = res.data || 'Distribution failed.';
-                            el.style.color = '#d63638';
-                        }
-                        btn.disabled = false;
-                        btn.textContent = 'Distribute Now';
-                    })
-                    .catch(function() {
-                        btn.disabled = false;
-                        btn.textContent = 'Distribute Now';
-                    });
-            });
-        })();
-        </script>
         <?php
     }
 
     public static function ajax_distribute() {
-        check_ajax_referer( 'msh_distribute_nonce', 'nonce' );
+        check_ajax_referer( 'msh_seo_distribute_nonce', 'nonce' );
 
         if ( ! current_user_can( 'edit_posts' ) ) {
             wp_send_json_error( __( 'Permission denied.', 'msh-seo' ) );
@@ -150,12 +122,12 @@ class MSH_Distribution {
             wp_send_json_error( __( 'Post must be published first.', 'msh-seo' ) );
         }
 
-        $api_key = MSH_Auth::get_key();
+        $api_key = MSH_SEO_Auth::get_key();
         if ( empty( $api_key ) ) {
             wp_send_json_error( __( 'MSH API key not configured.', 'msh-seo' ) );
         }
 
-        $connection = MSH_Auth::get_connection_info();
+        $connection = MSH_SEO_Auth::get_connection_info();
         $base_url   = ! empty( $connection['dashboard_url'] ) ? $connection['dashboard_url'] : 'https://app.marketingsohigh.com';
 
         $body = array(
@@ -184,10 +156,10 @@ class MSH_Distribution {
         $data = json_decode( wp_remote_retrieve_body( $response ), true );
 
         if ( $code >= 200 && $code < 300 && ! empty( $data['success'] ) ) {
-            $existing = get_post_meta( $post_id, '_msh_distributed_channels', true );
+            $existing = get_post_meta( $post_id, '_msh_seo_distributed_channels', true );
             $existing = is_array( $existing ) ? $existing : array();
             $merged   = array_unique( array_merge( $existing, $data['queued_channels'] ?? $channels ) );
-            update_post_meta( $post_id, '_msh_distributed_channels', $merged );
+            update_post_meta( $post_id, '_msh_seo_distributed_channels', $merged );
 
             wp_send_json_success( array(
                 'message'         => sprintf(

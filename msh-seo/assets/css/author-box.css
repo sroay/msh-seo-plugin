@@ -1,0 +1,13 @@
+/* MSH SEO: author box under single posts. */
+.msh-author {
+	margin: 2.5em 0 1em;
+	padding: 1.1em 1.25em;
+	border: 1px solid rgba(128, 128, 128, 0.25);
+	border-radius: 8px;
+	font-size: 0.95em;
+	line-height: 1.5;
+}
+.msh-author__name { margin: 0; font-weight: 600; }
+.msh-author__role { font-weight: 400; opacity: 0.75; }
+.msh-author__bio { margin: 0.4em 0 0; }
+.msh-author__links { margin: 0.5em 0 0; opacity: 0.85; }

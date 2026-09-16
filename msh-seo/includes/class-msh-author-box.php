@@ -18,16 +18,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class MSH_Author_Box {
+class MSH_SEO_Author_Box {
 
 	public static function init() {
 		add_filter( 'the_content', array( __CLASS__, 'maybe_append' ), 21 );
-		add_action( 'wp_head', array( __CLASS__, 'inline_css' ) );
-		add_shortcode( 'msh_author_box', array( __CLASS__, 'render' ) );
+		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+		add_shortcode( 'msh_seo_author_box', array( __CLASS__, 'render' ) );
 	}
 
 	/**
-	 * Founder fields as delivered by the dashboard (see MSH_Auth::verify_connection).
+	 * Founder fields as delivered by the dashboard (see MSH_SEO_Auth::verify_connection).
 	 *
 	 * @return array|null name, job_title, bio, same_as[] — or null when unknown.
 	 */
@@ -76,6 +76,9 @@ class MSH_Author_Box {
 			return '';
 		}
 		$site = get_bloginfo( 'name' );
+		// A shortcode placed outside single posts still needs the styles; a
+		// stylesheet enqueued this late is printed in the footer.
+		wp_enqueue_style( 'msh-seo-author-box', MSH_SEO_URL . 'assets/css/author-box.css', array(), MSH_SEO_VERSION );
 		ob_start();
 		?>
 		<aside class="msh-author" aria-label="About the author">
@@ -105,17 +108,21 @@ class MSH_Author_Box {
 		if ( ! get_option( 'msh_seo_author_box_enabled', true ) ) {
 			return $content;
 		}
-		if ( false !== strpos( $content, 'msh-author' ) || false !== strpos( $content, '[msh_author_box]' ) ) {
+		if ( false !== strpos( $content, 'msh-author' ) || false !== strpos( $content, '[msh_seo_author_box]' ) ) {
 			return $content;
 		}
 		$box = self::render();
 		return $box ? $content . "\n" . $box : $content;
 	}
 
-	public static function inline_css() {
+	/**
+	 * Load the author box styles on single posts, where the box is appended
+	 * automatically.
+	 */
+	public static function enqueue_assets() {
 		if ( ! is_singular( 'post' ) || ! self::founder() ) {
 			return;
 		}
-		echo '<style id="msh-author-css">.msh-author{margin:2.5em 0 1em;padding:1.1em 1.25em;border:1px solid rgba(128,128,128,.25);border-radius:8px;font-size:.95em;line-height:1.5}.msh-author__name{margin:0;font-weight:600}.msh-author__role{font-weight:400;opacity:.75}.msh-author__bio{margin:.4em 0 0}.msh-author__links{margin:.5em 0 0;opacity:.85}</style>' . "\n";
+		wp_enqueue_style( 'msh-seo-author-box', MSH_SEO_URL . 'assets/css/author-box.css', array(), MSH_SEO_VERSION );
 	}
 }

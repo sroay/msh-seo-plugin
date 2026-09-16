@@ -13,13 +13,26 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Dashboard_Widget {
+class MSH_SEO_Dashboard_Widget {
 
     /**
      * Initialize dashboard widget hooks.
      */
     public static function init() {
         add_action( 'wp_dashboard_setup', array( __CLASS__, 'register_widget' ) );
+        add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+    }
+
+    /**
+     * Load the widget styles on the dashboard screen.
+     *
+     * @param string $hook Current admin page.
+     */
+    public static function enqueue_assets( $hook ) {
+        if ( 'index.php' !== $hook ) {
+            return;
+        }
+        wp_enqueue_style( 'msh-seo-dashboard-widget', MSH_SEO_URL . 'assets/css/dashboard-widget.css', array(), MSH_SEO_VERSION );
     }
 
     /**
@@ -31,18 +44,18 @@ class MSH_Dashboard_Widget {
         }
 
         wp_add_dashboard_widget(
-            'msh_marketing_overview',
+            'msh_seo_marketing_overview',
             __( 'MSH SEO Command Center', 'msh-seo' ),
             array( __CLASS__, 'render_widget' )
         );
 
         // Move widget to the top of the main column
         global $wp_meta_boxes;
-        if ( isset( $wp_meta_boxes['dashboard']['normal']['core']['msh_marketing_overview'] ) ) {
-            $widget = $wp_meta_boxes['dashboard']['normal']['core']['msh_marketing_overview'];
-            unset( $wp_meta_boxes['dashboard']['normal']['core']['msh_marketing_overview'] );
+        if ( isset( $wp_meta_boxes['dashboard']['normal']['core']['msh_seo_marketing_overview'] ) ) {
+            $widget = $wp_meta_boxes['dashboard']['normal']['core']['msh_seo_marketing_overview'];
+            unset( $wp_meta_boxes['dashboard']['normal']['core']['msh_seo_marketing_overview'] );
             $wp_meta_boxes['dashboard']['normal']['core'] = array_merge(
-                array( 'msh_marketing_overview' => $widget ),
+                array( 'msh_seo_marketing_overview' => $widget ),
                 $wp_meta_boxes['dashboard']['normal']['core']
             );
         }
@@ -52,7 +65,7 @@ class MSH_Dashboard_Widget {
      * Render the dashboard widget content.
      */
     public static function render_widget() {
-        $is_connected = class_exists( 'MSH_Auth' ) && MSH_Auth::is_connected();
+        $is_connected = class_exists( 'MSH_SEO_Auth' ) && MSH_SEO_Auth::is_connected();
 
         if ( ! $is_connected ) {
             self::render_disconnected();
@@ -60,8 +73,8 @@ class MSH_Dashboard_Widget {
         }
 
         // Reuse analytics data if available.
-        $health = class_exists( 'MSH_Analytics' ) ? MSH_Analytics::get_seo_health() : null;
-        $ext    = class_exists( 'MSH_Analytics' ) ? MSH_Analytics::get_extended_data() : null;
+        $health = class_exists( 'MSH_SEO_Analytics' ) ? MSH_SEO_Analytics::get_seo_health() : null;
+        $ext    = class_exists( 'MSH_SEO_Analytics' ) ? MSH_SEO_Analytics::get_extended_data() : null;
 
         if ( ! $health || ! $ext ) {
             self::render_disconnected();
@@ -72,7 +85,6 @@ class MSH_Dashboard_Widget {
         self::render_top_issues( $health, $ext );
         self::render_quick_stats( $health, $ext );
         self::render_quick_actions();
-        self::render_widget_styles();
     }
 
     /**
@@ -244,40 +256,4 @@ class MSH_Dashboard_Widget {
         <?php
     }
 
-    /**
-     * Output inline styles for the dashboard widget.
-     */
-    private static function render_widget_styles() {
-        static $rendered = false;
-        if ( $rendered ) { return; }
-        $rendered = true;
-        ?>
-        <style>
-        .msh-dw-disconnected { text-align: center; padding: 16px 0; }
-        .msh-dw-header { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
-        .msh-dw-ring {
-            width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
-            background: conic-gradient(var(--color) calc(var(--score) * 3.6deg), #f1f5f9 0);
-            display: flex; align-items: center; justify-content: center; position: relative;
-        }
-        .msh-dw-ring::before {
-            content: ''; position: absolute; width: 40px; height: 40px; border-radius: 50%; background: #fff;
-        }
-        .msh-dw-ring-num { position: relative; z-index: 1; font-size: 16px; font-weight: 800; }
-        .msh-dw-header-text { display: flex; flex-direction: column; }
-        .msh-dw-header-text strong { font-size: 15px; }
-        .msh-dw-sub { font-size: 12px; color: #64748b; }
-        .msh-dw-section { margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #f0f0f0; }
-        .msh-dw-section:last-of-type { border-bottom: none; margin-bottom: 0; }
-        .msh-dw-section h4 { margin: 0 0 6px; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-        .msh-dw-issue { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 0; }
-        .msh-dw-more { font-size: 11px; color: #94a3b8; margin: 4px 0 0; }
-        .msh-dw-stats-row { display: flex; gap: 0; }
-        .msh-dw-stat-item { flex: 1; text-align: center; }
-        .msh-dw-stat-n { display: block; font-size: 18px; font-weight: 700; line-height: 1.2; }
-        .msh-dw-stat-l { display: block; font-size: 10px; color: #64748b; text-transform: uppercase; }
-        .msh-dw-actions { display: flex; gap: 8px; margin-top: 4px; }
-        </style>
-        <?php
-    }
 }

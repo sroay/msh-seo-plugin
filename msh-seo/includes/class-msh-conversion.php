@@ -2,7 +2,7 @@
 /**
  * MSH Conversion — intent-personalized CTAs + conversion tracking.
  *
- * Renders a call-to-action (shortcode [msh_cta], a block, or auto-appended to
+ * Renders a call-to-action (shortcode [msh_seo_cta], a block, or auto-appended to
  * posts) whose message adapts to the visitor's intent — classified client-side
  * from referrer, UTM params and returning status. Impression/click events are
  * streamed back to the MSH brain, which aggregates per post + intent so the
@@ -16,13 +16,13 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Conversion {
+class MSH_SEO_Conversion {
 
     /**
      * Wire up shortcode, block, tracking route, assets and auto-inject.
      */
     public static function init() {
-        add_shortcode( 'msh_cta', array( __CLASS__, 'render_cta' ) );
+        add_shortcode( 'msh_seo_cta', array( __CLASS__, 'render_cta' ) );
         add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
         add_filter( 'the_content', array( __CLASS__, 'maybe_autoinject' ), 20 );
@@ -52,10 +52,10 @@ class MSH_Conversion {
         // is_connected(), whose self-healing verify is admin-only and must
         // not run (or flap) during a visitor's page render. cta_config()
         // itself is transient-cached with a 4s timeout + negative caching.
-        if ( ! class_exists( 'MSH_Auth' ) || ! MSH_Auth::get_key() ) {
+        if ( ! class_exists( 'MSH_SEO_Auth' ) || ! MSH_SEO_Auth::get_key() ) {
             return null;
         }
-        $res = MSH_API::cta_config();
+        $res = MSH_SEO_API::cta_config();
         if ( is_wp_error( $res ) || empty( $res['config']['variants'] ) || empty( $res['target_url'] ) ) {
             return null;
         }
@@ -114,7 +114,7 @@ class MSH_Conversion {
             return $content;
         }
         // Don't double up if the author already placed a CTA.
-        if ( false !== strpos( $content, 'msh-cta' ) || false !== strpos( $content, '[msh_cta]' ) ) {
+        if ( false !== strpos( $content, 'msh-seo-cta' ) || false !== strpos( $content, '[msh_seo_cta]' ) ) {
             return $content;
         }
         $cta = self::render_cta();
@@ -129,18 +129,18 @@ class MSH_Conversion {
             return;
         }
 
-        wp_register_style( 'msh-cta', false, array(), MSH_SEO_VERSION );
-        wp_enqueue_style( 'msh-cta' );
-        wp_add_inline_style( 'msh-cta', self::inline_css() );
+        wp_register_style( 'msh-seo-cta', false, array(), MSH_SEO_VERSION );
+        wp_enqueue_style( 'msh-seo-cta' );
+        wp_add_inline_style( 'msh-seo-cta', self::inline_css() );
 
         wp_enqueue_script(
-            'msh-cta',
+            'msh-seo-cta',
             MSH_SEO_URL . 'assets/js/msh-cta.js',
             array(),
             MSH_SEO_VERSION,
             true
         );
-        wp_localize_script( 'msh-cta', 'mshCta', array(
+        wp_localize_script( 'msh-seo-cta', 'mshSeoCta', array(
             'endpoint' => esc_url_raw( rest_url( 'msh-seo/v1/conversion-event' ) ),
         ) );
     }
@@ -186,7 +186,7 @@ class MSH_Conversion {
 
         // Light per-IP rate limit.
         $ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '0';
-        $rl_key = 'msh_cta_rl_' . md5( $ip );
+        $rl_key = 'msh_seo_cta_rl_' . md5( $ip );
         $count  = (int) get_transient( $rl_key );
         if ( $count > 200 ) {
             return new WP_REST_Response( array( 'ok' => true ), 202 );
@@ -207,7 +207,7 @@ class MSH_Conversion {
             $event['value'] = (float) $params['value'];
         }
 
-        MSH_API::conversion_event( array( $event ) );
+        MSH_SEO_API::conversion_event( array( $event ) );
 
         return new WP_REST_Response( array( 'ok' => true ), 202 );
     }

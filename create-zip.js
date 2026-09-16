@@ -15,11 +15,11 @@ const configs = [
   { out: 'msh-seo-flat.zip', prefix: '' },
 ];
 
-const skipDirs = ['node_modules', 'src', 'tests'];
+// src/ and package.json ship on purpose: WordPress.org requires the human-readable
+// source of build/index.js, and the build command, to be included or linked.
+const skipDirs = ['node_modules', 'tests'];
 const skipFiles = [
   'package-lock.json',
-  'package.json',
-  'webpack.config.js',
 ];
 
 // Nothing that starts with a dot.

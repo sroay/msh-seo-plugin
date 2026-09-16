@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Crawlers {
+class MSH_SEO_Crawlers {
 
     /**
      * Known AI crawler user-agent names and their descriptions.
@@ -69,7 +69,7 @@ class MSH_Crawlers {
      * @return void
      */
     private static function output_llms_content( $full ) {
-        $cache_key = $full ? 'msh_llms_full_txt' : 'msh_llms_txt';
+        $cache_key = $full ? 'msh_seo_llms_full_txt' : 'msh_seo_llms_txt';
         $content   = get_transient( $cache_key );
 
         if ( false === $content ) {
@@ -290,7 +290,7 @@ class MSH_Crawlers {
             'blocked' => array(),
         );
 
-        $settings = get_option( 'msh_crawler_settings', $defaults );
+        $settings = get_option( 'msh_seo_crawler_settings', $defaults );
 
         if ( ! is_array( $settings ) ) {
             return $defaults;
@@ -317,7 +317,7 @@ class MSH_Crawlers {
      * @return void
      */
     public static function clear_cache() {
-        delete_transient( 'msh_llms_txt' );
-        delete_transient( 'msh_llms_full_txt' );
+        delete_transient( 'msh_seo_llms_txt' );
+        delete_transient( 'msh_seo_llms_full_txt' );
     }
 }

@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class MSH_Indexing {
+class MSH_SEO_Indexing {
 
     /**
      * Option key for storing the IndexNow API key.
@@ -31,7 +31,7 @@ class MSH_Indexing {
      *
      * @var string
      */
-    const LOG_TRANSIENT = 'msh_indexnow_log';
+    const LOG_TRANSIENT = 'msh_seo_indexnow_log';
 
     /**
      * Maximum number of log entries to retain.
@@ -59,7 +59,7 @@ class MSH_Indexing {
      *
      * @var string
      */
-    const KEY_CHECK_TRANSIENT = 'msh_indexnow_key_check';
+    const KEY_CHECK_TRANSIENT = 'msh_seo_indexnow_key_check';
 
     /**
      * Initialize IndexNow hooks.
@@ -167,7 +167,7 @@ class MSH_Indexing {
      * @return bool True if the submission was accepted, false otherwise.
      */
     public static function submit_urls( $urls ) {
-        if ( empty( $urls ) ) {
+        if ( empty( $urls ) || ! self::enabled() ) {
             return false;
         }
 
@@ -230,6 +230,15 @@ class MSH_Indexing {
         self::log_submission( $urls, $success, $status_code, $error_msg );
 
         return $success;
+    }
+
+    /**
+     * Whether IndexNow submissions are switched on (MSH SEO > Settings).
+     *
+     * @return bool
+     */
+    public static function enabled() {
+        return (bool) get_option( 'msh_seo_indexnow_enabled', true );
     }
 
     /**
@@ -357,8 +366,8 @@ class MSH_Indexing {
      * @return void
      */
     public static function on_post_status_change( $new_status, $old_status, $post ) {
-        // Only act on publish transitions.
-        if ( 'publish' !== $new_status ) {
+        // Only act on publish transitions, and only when IndexNow is on.
+        if ( 'publish' !== $new_status || ! self::enabled() ) {
             return;
         }
 
@@ -374,13 +383,13 @@ class MSH_Indexing {
         }
 
         // Prevent duplicate submissions during the same request.
-        $already_submitted = get_transient( 'msh_indexnow_submitted_' . $post->ID );
+        $already_submitted = get_transient( 'msh_seo_indexnow_submitted_' . $post->ID );
         if ( $already_submitted ) {
             return;
         }
 
         // Mark as submitted for this request (60 second cooldown).
-        set_transient( 'msh_indexnow_submitted_' . $post->ID, 1, 60 );
+        set_transient( 'msh_seo_indexnow_submitted_' . $post->ID, 1, 60 );
 
         $permalink = get_permalink( $post->ID );
         $urls      = array( $permalink );
@@ -463,8 +472,8 @@ class MSH_Indexing {
         if ( self::google_indexing_enabled() ) {
             return 'local';
         }
-        if ( class_exists( 'MSH_Auth' ) ) {
-            $info = MSH_Auth::get_connection_info();
+        if ( class_exists( 'MSH_SEO_Auth' ) ) {
+            $info = MSH_SEO_Auth::get_connection_info();
             if ( is_array( $info ) && ! empty( $info['central_google_indexing'] ) ) {
                 return 'central';
             }
@@ -574,7 +583,7 @@ class MSH_Indexing {
         $result = self::submit_all();
 
         wp_safe_redirect( add_query_arg(
-            array( 'page' => 'msh-seo', 'msh_bulk' => (int) $result['count'] ),
+            array( 'page' => 'msh-seo', 'msh_seo_bulk' => (int) $result['count'] ),
             admin_url( 'admin.php' )
         ) );
         exit;
@@ -660,7 +669,7 @@ class MSH_Indexing {
      * @return string Access token, or '' on failure.
      */
     private static function get_google_access_token() {
-        $cached = get_transient( 'msh_google_index_token' );
+        $cached = get_transient( 'msh_seo_google_index_token' );
         if ( $cached ) {
             return $cached;
         }
@@ -705,7 +714,7 @@ class MSH_Indexing {
         $data  = json_decode( wp_remote_retrieve_body( $response ), true );
         $token = isset( $data['access_token'] ) ? $data['access_token'] : '';
         if ( $token ) {
-            set_transient( 'msh_google_index_token', $token, 55 * MINUTE_IN_SECONDS );
+            set_transient( 'msh_seo_google_index_token', $token, 55 * MINUTE_IN_SECONDS );
         }
         return $token;
     }

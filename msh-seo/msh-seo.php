@@ -3,7 +3,7 @@
  * Plugin Name: MSH SEO
  * Plugin URI: https://github.com/sroay/msh-seo-plugin
  * Description: Free SEO tools for WordPress with AI-powered content optimization. Connects to Marketing So High for advanced AI features.
- * Version: 1.4.1
+ * Version: 1.5.0
  * Author: Marketing So High
  * Author URI: https://technobelieve.com
  * License: GPLv2 or later
@@ -17,11 +17,12 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'MSH_SEO_VERSION', '1.4.1' );
+define( 'MSH_SEO_VERSION', '1.5.0' );
 define( 'MSH_SEO_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MSH_SEO_URL', plugin_dir_url( __FILE__ ) );
 
 // Load includes
+require_once MSH_SEO_DIR . 'includes/class-msh-upgrade.php';
 require_once MSH_SEO_DIR . 'includes/class-msh-auth.php';
 require_once MSH_SEO_DIR . 'includes/class-msh-api.php';
 require_once MSH_SEO_DIR . 'includes/class-msh-admin.php';
@@ -65,10 +66,17 @@ require_once MSH_SEO_DIR . 'includes/class-msh-site-health.php';
  * otherwise silently untranslated despite 300+ strings being ready for it.
  */
 function msh_seo_activate() {
-    MSH_Redirects::create_tables();
+    // Move data stored under the pre-1.5.0 names first, or create_tables()
+    // would make empty tables beside the ones holding the redirect rules.
+    MSH_SEO_Upgrade::maybe_run();
+    MSH_SEO_Redirects::create_tables();
     flush_rewrite_rules();
 }
 register_activation_hook( __FILE__, 'msh_seo_activate' );
+
+// Sites updated in place never fire the activation hook, so the prefix
+// migration also runs on the first request of any kind after the update.
+add_action( 'plugins_loaded', array( 'MSH_SEO_Upgrade', 'maybe_run' ), 1 );
 
 /**
  * Deactivation hook: clean up transients.
@@ -77,7 +85,7 @@ function msh_seo_deactivate() {
     global $wpdb;
     // Leave no orphaned cron entry behind pointing at a class that is no
     // longer loaded.
-    MSH_Beacon::unschedule();
+    MSH_SEO_Beacon::unschedule();
     $wpdb->query( $wpdb->prepare(
         "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
         $wpdb->esc_like( '_transient_msh_' ) . '%',
@@ -110,7 +118,7 @@ function msh_seo_admin_menu() {
         __( 'MSH SEO', 'msh-seo' ),
         'manage_options',
         'msh-seo',
-        array( 'MSH_Admin', 'render_settings_page' ),
+        array( 'MSH_SEO_Admin', 'render_settings_page' ),
         'dashicons-chart-line',
         80
     );
@@ -160,7 +168,7 @@ function msh_seo_autopilot_page() {
     if ( ! current_user_can( 'manage_options' ) ) {
         return;
     }
-    MSH_Autopilot::render_admin_page();
+    MSH_SEO_Autopilot::render_admin_page();
 }
 
 /**
@@ -172,8 +180,8 @@ function msh_seo_redirects_page() {
     }
     echo '<div class="wrap">';
     echo '<h1>' . esc_html__( 'MSH SEO Redirects', 'msh-seo' ) . '</h1>';
-    if ( class_exists( 'MSH_Redirects' ) ) {
-        MSH_Redirects::render_admin_page();
+    if ( class_exists( 'MSH_SEO_Redirects' ) ) {
+        MSH_SEO_Redirects::render_admin_page();
     } else {
         echo '<p>' . esc_html__( 'Redirects module is not available.', 'msh-seo' ) . '</p>';
     }
@@ -189,8 +197,8 @@ function msh_seo_import_page() {
     }
     echo '<div class="wrap">';
     echo '<h1>' . esc_html__( 'Import SEO Data', 'msh-seo' ) . '</h1>';
-    if ( class_exists( 'MSH_Import' ) ) {
-        MSH_Import::render_admin_page();
+    if ( class_exists( 'MSH_SEO_Import' ) ) {
+        MSH_SEO_Import::render_admin_page();
     } else {
         echo '<p>' . esc_html__( 'Import module is not available.', 'msh-seo' ) . '</p>';
     }
@@ -204,7 +212,7 @@ function msh_seo_analytics_page() {
     if ( ! current_user_can( 'manage_options' ) ) {
         return;
     }
-    MSH_Analytics::render_page();
+    MSH_SEO_Analytics::render_page();
 }
 
 /**
@@ -237,7 +245,7 @@ function msh_seo_enqueue_block_editor_assets() {
         );
     }
 
-    $connection_info = MSH_Auth::get_connection_info();
+    $connection_info = MSH_SEO_Auth::get_connection_info();
 
     // REST base pinned to the WORDPRESS host. rest_url() builds on home_url(),
     // which on headless installs is the public front-end domain — cross-origin
@@ -252,7 +260,7 @@ function msh_seo_enqueue_block_editor_assets() {
     }
 
     wp_localize_script( 'msh-seo-editor', 'mshSeoData', array(
-        'isConnected'    => MSH_Auth::is_connected(),
+        'isConnected'    => MSH_SEO_Auth::is_connected(),
         'connectionInfo' => $connection_info ? $connection_info : null,
         'restUrl'        => esc_url_raw( $rest_base ),
         'nonce'          => wp_create_nonce( 'wp_rest' ),
@@ -263,7 +271,7 @@ add_action( 'enqueue_block_editor_assets', 'msh_seo_enqueue_block_editor_assets'
 
 /**
  * Initialize meta tags (canonical removal, Divi conflict handling, and meta output).
- * All handled inside MSH_Meta_Tags::init().
+ * All handled inside MSH_SEO_Meta_Tags::init().
  */
 /*
  * Head output is decided on `plugins_loaded`, NOT here.
@@ -281,21 +289,21 @@ function msh_seo_init_head_output() {
 	// canonicals gives every page two of each. That measurably worsens the
 	// user's search results and reads to them as this plugin breaking their
 	// site. Whoever was there first keeps the output.
-	if ( ! MSH_Conflicts::should_output() ) {
+	if ( ! MSH_SEO_Conflicts::should_output() ) {
 		return;
 	}
-	MSH_Meta_Tags::init();
+	MSH_SEO_Meta_Tags::init();
 	// Replaces the core sitemap, so two SEO plugins would mean two competing
 	// sitemap indexes.
-	MSH_Sitemap::init();
+	MSH_SEO_Sitemap::init();
 	// Breadcrumb JSON-LD duplicates too.
-	MSH_Breadcrumbs::init();
+	MSH_SEO_Breadcrumbs::init();
 }
 
 /**
  * Output JSON-LD schema markup in wp_head.
  */
-add_action( 'wp_head', array( 'MSH_Schema', 'output_schema' ), 2 );
+add_action( 'wp_head', array( 'MSH_SEO_Schema', 'output_schema' ), 2 );
 
 /**
  * Initialize sitemap functionality.
@@ -309,72 +317,72 @@ add_filter( 'wp_sitemaps_enabled', '__return_false' );
 /**
  * Initialize redirects (301/302 processing + 404 logging).
  */
-add_action( 'init', array( 'MSH_Redirects', 'init' ) );
+add_action( 'init', array( 'MSH_SEO_Redirects', 'init' ) );
 
-MSH_Dashboard_Widget::init();
+MSH_SEO_Dashboard_Widget::init();
 
 /**
  * Initialize distribution meta box on post editor.
  */
-MSH_Distribution::init();
+MSH_SEO_Distribution::init();
 
 // WooCommerce SEO (only if WooCommerce is active)
 add_action('plugins_loaded', function() {
     if (class_exists('WooCommerce')) {
-        MSH_WooCommerce::init();
+        MSH_SEO_WooCommerce::init();
     }
 });
 
 // Image SEO automation
-MSH_Image_SEO::init();
+MSH_SEO_Image_SEO::init();
 
 // Breadcrumbs shortcode
 
 
 // Instant Indexing (IndexNow)
-MSH_Indexing::init();
+MSH_SEO_Indexing::init();
 
 // Internal Link Mesh — editor suggestions from the MSH cluster graph
-MSH_Link_Mesh::init();
+MSH_SEO_Link_Mesh::init();
 
 // Personalized CTAs + conversion tracking (content → rank → convert loop)
-MSH_Conversion::init();
+MSH_SEO_Conversion::init();
 
 // AEO / llms.txt
-MSH_AEO::init();
+MSH_SEO_AEO::init();
 
 // AI Crawler management (robots.txt, llms.txt)
-MSH_Crawlers::init();
+MSH_SEO_Crawlers::init();
 
 // Content freshness scanner (weekly cron)
-MSH_Freshness::init();
+MSH_SEO_Freshness::init();
 
 // Author box + newsletter signup under every post (1.4.0)
-MSH_Author_Box::init();
-MSH_Newsletter::init();
+MSH_SEO_Author_Box::init();
+MSH_SEO_Newsletter::init();
 
 // SEO Autopilot — self-healing content engine (weekly cron + REST receiver)
-MSH_Autopilot::init();
+MSH_SEO_Autopilot::init();
 
 // Analytics AJAX handler
-MSH_Analytics::init();
+MSH_SEO_Analytics::init();
 
 // Daily health beacon — the plugin reports its own condition to MSH.
 // Without it a subsystem can be dead for a year while the site looks fine
 // from outside, which is exactly what the redirect engine did.
-MSH_Beacon::init();
+MSH_SEO_Beacon::init();
 
 // Google Analytics tag delivered by the MSH dashboard (direct push, /verify
 // reply, or beacon reply). Outside the SEO-plugin conflict gate on purpose:
 // another plugin owning the meta tags says nothing about whether Analytics
 // should run.
-MSH_Tracking::init();
+MSH_SEO_Tracking::init();
 
 // These two always run, conflict or not. The conflict notice is the only thing
 // telling the user why their meta tags did not change, and Site Health is where
 // they will look before they open a support thread.
-MSH_Conflicts::init();
-MSH_Site_Health::init();
+MSH_SEO_Conflicts::init();
+MSH_SEO_Site_Health::init();
 
 /**
  * Register post meta fields.
@@ -383,10 +391,10 @@ function msh_seo_register_meta() {
     $meta_fields = array(
         '_msh_seo_title'       => 'string',
         '_msh_seo_description' => 'string',
-        '_msh_focus_keyword'   => 'string',
+        '_msh_seo_focus_keyword'   => 'string',
         '_msh_seo_score'       => 'integer',
         '_msh_seo_noindex'     => 'boolean',
-        '_msh_schema_type'     => 'string',
+        '_msh_seo_schema_type'     => 'string',
     );
 
     foreach ( $meta_fields as $key => $type ) {
@@ -394,8 +402,10 @@ function msh_seo_register_meta() {
             'show_in_rest'  => true,
             'single'        => true,
             'type'          => $type,
-            'auth_callback' => function () {
-                return current_user_can( 'edit_posts' );
+            // Per post: edit_posts alone would let an author change the SEO
+            // fields of a post they are not allowed to edit.
+            'auth_callback' => function ( $allowed, $meta_key, $object_id ) {
+                return current_user_can( 'edit_post', (int) $object_id );
             },
         ) );
     }
@@ -425,9 +435,7 @@ function msh_seo_register_rest_routes() {
     register_rest_route( 'msh-seo/v1', '/local-analyze', array(
         'methods'             => 'POST',
         'callback'            => 'msh_seo_rest_local_analyze',
-        'permission_callback' => function () {
-            return current_user_can( 'edit_posts' );
-        },
+        'permission_callback' => 'msh_seo_can_edit_requested_post',
     ) );
 
     register_rest_route( 'msh-seo/v1', '/publish', array(
@@ -460,7 +468,7 @@ add_action( 'rest_api_init', 'msh_seo_register_rest_routes' );
 /**
  * REST: store the Google site verification token pushed by the MSH dashboard
  * (one-click Google Search Console onboarding). The token is rendered as
- * <meta name="google-site-verification"> in <head> by MSH_Meta_Tags.
+ * <meta name="google-site-verification"> in <head> by MSH_SEO_Meta_Tags.
  */
 function msh_seo_rest_site_verification( WP_REST_Request $request ) {
     $params = $request->get_json_params();
@@ -477,7 +485,7 @@ function msh_seo_rest_site_verification( WP_REST_Request $request ) {
     $token = isset( $params['token'] ) ? sanitize_text_field( (string) $params['token'] ) : '';
 
     if ( '' === $token || ! preg_match( '/^[A-Za-z0-9_\-]{8,256}$/', $token ) ) {
-        return new WP_Error( 'msh_invalid_token', 'Invalid verification token format.', array( 'status' => 400 ) );
+        return new WP_Error( 'msh_seo_invalid_token', 'Invalid verification token format.', array( 'status' => 400 ) );
     }
 
     update_option( 'msh_seo_google_site_verification', $token );
@@ -503,7 +511,7 @@ function msh_seo_rest_analyze( WP_REST_Request $request ) {
 
     // When only keyword is provided, do a keyword-only lookup (no title/content required).
     if ( empty( $title ) && empty( $content ) && ! empty( $keyword ) ) {
-        $result = MSH_API::analyze( '', '', $keyword, $url );
+        $result = MSH_SEO_API::analyze( '', '', $keyword, $url );
 
         if ( is_wp_error( $result ) ) {
             return $result;
@@ -516,7 +524,7 @@ function msh_seo_rest_analyze( WP_REST_Request $request ) {
         return new WP_Error( 'missing_data', __( 'Title and content are required.', 'msh-seo' ), array( 'status' => 400 ) );
     }
 
-    $result = MSH_API::analyze( $title, $content, $keyword, $url );
+    $result = MSH_SEO_API::analyze( $title, $content, $keyword, $url );
 
     if ( is_wp_error( $result ) ) {
         return $result;
@@ -539,7 +547,7 @@ function msh_seo_rest_generate_meta( WP_REST_Request $request ) {
         return new WP_Error( 'missing_data', __( 'Title and content are required.', 'msh-seo' ), array( 'status' => 400 ) );
     }
 
-    $result = MSH_API::generate_meta( $title, $content, $keyword );
+    $result = MSH_SEO_API::generate_meta( $title, $content, $keyword );
 
     if ( is_wp_error( $result ) ) {
         return $result;
@@ -576,8 +584,27 @@ function msh_seo_rest_aeo_analyze( WP_REST_Request $request ) {
         return new WP_Error( 'missing_data', __( 'Content is required.', 'msh-seo' ), array( 'status' => 400 ) );
     }
 
-    $result = MSH_AEO::analyze( $content, $title );
+    $result = MSH_SEO_AEO::analyze( $content, $title );
     return rest_ensure_response( $result );
+}
+
+/**
+ * Permission callback for routes that read a post named in the request.
+ *
+ * edit_posts says the user may edit posts in general; edit_post for the given
+ * ID says they may edit THIS one. Without it an author could read the
+ * analysis of another user's draft. A request without a post_id falls back to
+ * edit_posts, and the handler rejects it for the missing ID.
+ *
+ * @param WP_REST_Request $request Request.
+ * @return bool
+ */
+function msh_seo_can_edit_requested_post( WP_REST_Request $request ) {
+    $post_id = absint( $request->get_param( 'post_id' ) );
+    if ( $post_id ) {
+        return current_user_can( 'edit_post', $post_id );
+    }
+    return current_user_can( 'edit_posts' );
 }
 
 /**
@@ -589,7 +616,7 @@ function msh_seo_verify_plugin_key( WP_REST_Request $request ) {
         return false;
     }
     $provided_key = substr( $auth_header, 7 );
-    $stored_key   = MSH_Auth::get_key();
+    $stored_key   = MSH_SEO_Auth::get_key();
     if ( empty( $stored_key ) ) {
         return false;
     }
@@ -645,7 +672,7 @@ function msh_seo_rest_publish( WP_REST_Request $request ) {
 
     // Set MSH SEO meta fields
     if ( ! empty( $focus_keyword ) ) {
-        update_post_meta( $post_id, '_msh_focus_keyword', $focus_keyword );
+        update_post_meta( $post_id, '_msh_seo_focus_keyword', $focus_keyword );
     }
     if ( ! empty( $seo_title ) ) {
         update_post_meta( $post_id, '_msh_seo_title', $seo_title );
@@ -657,7 +684,7 @@ function msh_seo_rest_publish( WP_REST_Request $request ) {
         update_post_meta( $post_id, '_msh_seo_score', $seo_score );
     }
     if ( ! empty( $schema_type ) ) {
-        update_post_meta( $post_id, '_msh_schema_type', $schema_type );
+        update_post_meta( $post_id, '_msh_seo_schema_type', $schema_type );
     }
 
     // Handle featured image — download from URL and attach
