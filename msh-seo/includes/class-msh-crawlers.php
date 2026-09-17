@@ -79,9 +79,14 @@ class MSH_SEO_Crawlers {
 
         // Prevent WordPress from processing further.
         header( 'Content-Type: text/plain; charset=utf-8' );
+        // Browsers must not guess this is HTML: it is served, and read, as text.
+        header( 'X-Content-Type-Options: nosniff' );
         header( 'X-Robots-Tag: noindex' );
         header( 'Cache-Control: public, max-age=86400' );
-        echo $content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- plain text file output.
+        // llms.txt is a plain-text file for AI crawlers, served as text/plain with
+        // nosniff. It is built from post titles and permalinks with tags already
+        // stripped; HTML-escaping it would corrupt "&" and quotes in that text.
+        echo wp_strip_all_tags( $content ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- text/plain response, see above.
         exit;
     }
 

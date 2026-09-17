@@ -41,14 +41,15 @@ class MSH_SEO_Admin {
             MSH_SEO_VERSION
         );
 
-        // An empty-source handle of our own carries the shared admin script and
-        // its data, rather than attaching them to WordPress's jQuery handle.
-        wp_register_script( 'msh-seo-admin', false, array( 'jquery' ), MSH_SEO_VERSION, true );
-        wp_enqueue_script( 'msh-seo-admin' );
-        wp_add_inline_script( 'msh-seo-admin', self::get_inline_admin_js() );
+        wp_enqueue_script( 'msh-seo-admin', MSH_SEO_URL . 'assets/js/admin.js', array( 'jquery' ), MSH_SEO_VERSION, true );
         wp_localize_script( 'msh-seo-admin', 'mshSeoAdmin', array(
             'ajaxUrl' => admin_url( 'admin-ajax.php' ),
             'nonce'   => wp_create_nonce( 'msh_seo_admin_nonce' ),
+            'i18n'    => array(
+                'enterKey'          => __( 'Please enter an API key.', 'msh-seo' ),
+                'failed'            => __( 'Request failed. Please try again.', 'msh-seo' ),
+                'confirmDisconnect' => __( 'Disconnect from Marketing So High?', 'msh-seo' ),
+            ),
         ) );
 
         if ( 'msh-seo_page_msh-seo-analytics' === $hook ) {
@@ -512,7 +513,12 @@ class MSH_SEO_Admin {
 
             <?php
             // Bulk-index notice.
-            $bulk = isset( $_GET['msh_seo_bulk'] ) ? absint( $_GET['msh_seo_bulk'] ) : -1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            $bulk = -1;
+            if ( isset( $_GET['msh_seo_bulk'], $_GET['msh_seo_bulk_nonce'] )
+                && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['msh_seo_bulk_nonce'] ) ), 'msh_seo_bulk_notice' )
+                && current_user_can( 'manage_options' ) ) {
+                $bulk = absint( $_GET['msh_seo_bulk'] );
+            }
             if ( $bulk >= 0 ) {
                 echo '<div class="notice notice-success is-dismissible"><p>' .
                     sprintf(
@@ -715,64 +721,6 @@ class MSH_SEO_Admin {
 
         MSH_SEO_Auth::delete_key();
         wp_send_json_success( array( 'message' => __( 'Disconnected.', 'msh-seo' ) ) );
-    }
-
-    /**
-     * Inline admin JavaScript for the settings page.
-     */
-    private static function get_inline_admin_js() {
-        return <<<'JS'
-jQuery(function($) {
-    $('#msh-verify-btn').on('click', function() {
-        var btn = $(this);
-        var key = $('#msh-api-key').val().trim();
-        var spinner = $('#msh-verify-spinner');
-        var msg = $('#msh-verify-message');
-
-        if (!key) {
-            msg.html('<span style="color:#d63638;">Please enter an API key.</span>');
-            return;
-        }
-
-        btn.prop('disabled', true);
-        spinner.addClass('is-active');
-        msg.html('');
-
-        $.post(mshSeoAdmin.ajaxUrl, {
-            action: 'msh_seo_verify_connection',
-            nonce: mshSeoAdmin.nonce,
-            api_key: key
-        }, function(response) {
-            btn.prop('disabled', false);
-            spinner.removeClass('is-active');
-
-            if (response.success) {
-                msg.html('<span style="color:#00a32a;">' + response.data.message + '</span>');
-                setTimeout(function() { location.reload(); }, 1000);
-            } else {
-                msg.html('<span style="color:#d63638;">' + response.data.message + '</span>');
-            }
-        }).fail(function() {
-            btn.prop('disabled', false);
-            spinner.removeClass('is-active');
-            msg.html('<span style="color:#d63638;">Request failed. Please try again.</span>');
-        });
-    });
-
-    $('#msh-disconnect-btn').on('click', function() {
-        if (!confirm('Disconnect from Marketing So High?')) return;
-
-        $.post(mshSeoAdmin.ajaxUrl, {
-            action: 'msh_seo_disconnect',
-            nonce: mshSeoAdmin.nonce
-        }, function(response) {
-            if (response.success) {
-                location.reload();
-            }
-        });
-    });
-});
-JS;
     }
 }
 

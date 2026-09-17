@@ -84,14 +84,6 @@ class MSH_SEO_Answer {
         if ( ! is_singular() ) {
             return;
         }
-        wp_register_style( 'msh-seo-answer', false, array(), MSH_SEO_VERSION );
-        wp_enqueue_style( 'msh-seo-answer' );
-        wp_add_inline_style( 'msh-seo-answer',
-            '.msh-answer{margin:1.5em 0;padding:16px 18px;background:#f6f9ff;border-left:4px solid #ff5c8a;'
-            . 'border-radius:0 10px 10px 0;font-size:1.05em;line-height:1.55}'
-            . '.msh-answer__label{display:block;font-size:.72em;font-weight:700;letter-spacing:.05em;'
-            . 'text-transform:uppercase;color:#ff5c8a;margin-bottom:4px}'
-            . '.msh-answer__text{color:#1a1a1a}'
-        );
+        wp_enqueue_style( 'msh-seo-answer', MSH_SEO_URL . 'assets/css/answer.css', array(), MSH_SEO_VERSION );
     }
 }

@@ -315,6 +315,42 @@ class MSH_SEO_Image_SEO {
     }
 
     /**
+     * The post an upload is attached to, when the request proves it.
+     *
+     * The post ID arrives in the upload request, so it is trusted only when the
+     * request carries WordPress's own upload nonce (the media uploader's
+     * "media-form" nonce, or the REST nonce the block editor sends), and only
+     * for a user who may edit that post. Otherwise the upload keeps its own
+     * cleaned-up filename.
+     *
+     * @return int Post ID, or 0.
+     */
+    private static function upload_post_id() {
+        $verified = false;
+        if ( isset( $_REQUEST['_wpnonce'] ) ) {
+            $verified = (bool) wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['_wpnonce'] ) ), 'media-form' );
+        }
+        if ( ! $verified && isset( $_SERVER['HTTP_X_WP_NONCE'] ) ) {
+            $verified = (bool) wp_verify_nonce( sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_WP_NONCE'] ) ), 'wp_rest' );
+        }
+        if ( ! $verified ) {
+            return 0;
+        }
+
+        $post_id = 0;
+        if ( isset( $_REQUEST['post_id'] ) ) {
+            $post_id = absint( wp_unslash( $_REQUEST['post_id'] ) );
+        } elseif ( isset( $_REQUEST['post'] ) ) {
+            $post_id = absint( wp_unslash( $_REQUEST['post'] ) );
+        }
+
+        if ( ! $post_id || ! current_user_can( 'edit_post', $post_id ) ) {
+            return 0;
+        }
+        return $post_id;
+    }
+
+    /**
      * Get a contextual name from the current post being edited.
      *
      * Checks for focus keyword first, then falls back to post title.
@@ -322,15 +358,7 @@ class MSH_SEO_Image_SEO {
      * @return string A meaningful base name or empty string.
      */
     private static function get_context_name() {
-        // Try to get the post ID from the upload context.
-        $post_id = 0;
-
-        if ( isset( $_REQUEST['post_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            $post_id = absint( $_REQUEST['post_id'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        } elseif ( isset( $_REQUEST['post'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            $post_id = absint( $_REQUEST['post'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        }
-
+        $post_id = self::upload_post_id();
         if ( ! $post_id ) {
             return '';
         }

@@ -3,7 +3,7 @@
  * Plugin Name: MSH SEO
  * Plugin URI: https://github.com/sroay/msh-seo-plugin
  * Description: Free SEO tools for WordPress with AI-powered content optimization. Connects to Marketing So High for advanced AI features.
- * Version: 1.5.3
+ * Version: 1.5.4
  * Author: Techno Believe Solutions
  * Author URI: https://technobelieve.com
  * License: GPLv2 or later
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'MSH_SEO_VERSION', '1.5.3' );
+define( 'MSH_SEO_VERSION', '1.5.4' );
 define( 'MSH_SEO_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MSH_SEO_URL', plugin_dir_url( __FILE__ ) );
 

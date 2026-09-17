@@ -136,8 +136,8 @@ class MSH_SEO_Indexing {
         if ( '/' . $key . '.txt' === $request_path ) {
             header( 'Content-Type: text/plain; charset=utf-8' );
             header( 'X-Robots-Tag: noindex' );
-            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-            echo $key;
+            // The key is 32 hexadecimal characters, so escaping never changes it.
+            echo esc_html( $key );
             exit;
         }
     }
@@ -598,8 +598,14 @@ class MSH_SEO_Indexing {
 
         $result = self::submit_all();
 
+        // The count is shown on the settings page after the redirect. The nonce
+        // lets that page trust the number came from this handler.
         wp_safe_redirect( add_query_arg(
-            array( 'page' => 'msh-seo', 'msh_seo_bulk' => (int) $result['count'] ),
+            array(
+                'page'               => 'msh-seo',
+                'msh_seo_bulk'       => (int) $result['count'],
+                'msh_seo_bulk_nonce' => wp_create_nonce( 'msh_seo_bulk_notice' ),
+            ),
             admin_url( 'admin.php' )
         ) );
         exit;

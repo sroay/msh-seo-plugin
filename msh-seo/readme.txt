@@ -4,7 +4,7 @@ Tags: seo, schema markup, sitemap, redirects, indexnow
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.3
+Stable tag: 1.5.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -174,6 +174,11 @@ Terms of Service: https://marketingsohigh.com/terms
 Privacy Policy: https://marketingsohigh.com/privacy
 
 == Changelog ==
+
+= 1.5.4 =
+* Security: automatic image renaming on upload now uses the post only when the upload carries WordPress's upload nonce and you can edit that post.
+* Security: the bulk re-indexing notice checks a nonce before showing its count.
+* Improved: the settings page script and the answer-box and call-to-action styles now load from files instead of inline code, and connection messages are shown as plain text.
 
 = 1.5.3 =
 * Fixed: on a site installed in a subfolder (example.com/blog), /blog/sitemap.xml returned a 404. Sitemap addresses are now matched relative to where WordPress is installed.

@@ -129,9 +129,7 @@ class MSH_SEO_Conversion {
             return;
         }
 
-        wp_register_style( 'msh-seo-cta', false, array(), MSH_SEO_VERSION );
-        wp_enqueue_style( 'msh-seo-cta' );
-        wp_add_inline_style( 'msh-seo-cta', self::inline_css() );
+        wp_enqueue_style( 'msh-seo-cta', MSH_SEO_URL . 'assets/css/cta.css', array(), MSH_SEO_VERSION );
 
         wp_enqueue_script(
             'msh-seo-cta',
@@ -143,19 +141,6 @@ class MSH_SEO_Conversion {
         wp_localize_script( 'msh-seo-cta', 'mshSeoCta', array(
             'endpoint' => esc_url_raw( rest_url( 'msh-seo/v1/conversion-event' ) ),
         ) );
-    }
-
-    /**
-     * Minimal on-brand CTA styles (MSH pink → orange).
-     */
-    private static function inline_css() {
-        return '.msh-cta{margin:2.5em 0;border-radius:14px;padding:2px;background:linear-gradient(135deg,#ff5c8a,#ff9a3c)}'
-            . '.msh-cta__inner{background:#fff;border-radius:12px;padding:24px;text-align:center}'
-            . '.msh-cta__headline{margin:0 0 8px;font-size:1.35em;font-weight:700;line-height:1.25}'
-            . '.msh-cta__body{margin:0 0 16px;color:#555;font-size:1em}'
-            . '.msh-cta__btn{display:inline-block;background:linear-gradient(135deg,#ff5c8a,#ff9a3c);color:#fff !important;'
-            . 'padding:12px 26px;border-radius:9999px;font-weight:600;text-decoration:none;transition:opacity .2s}'
-            . '.msh-cta__btn:hover{opacity:.9;color:#fff !important}';
     }
 
     /**
