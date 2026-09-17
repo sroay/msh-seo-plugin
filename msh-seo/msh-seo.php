@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/sroay/msh-seo-plugin
  * Description: Free SEO tools for WordPress with AI-powered content optimization. Connects to Marketing So High for advanced AI features.
  * Version: 1.5.2
- * Author: Marketing So High
+ * Author: Techno Believe Solutions
  * Author URI: https://technobelieve.com
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
