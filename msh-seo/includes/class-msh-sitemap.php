@@ -53,11 +53,24 @@ class MSH_SEO_Sitemap {
 
         $request_uri = trim( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ), '/' );
         // Remove query string.
-        $request_uri = strtok( $request_uri, '?' );
+        $request_uri = (string) strtok( $request_uri, '?' );
+
+        // A site installed in a subfolder (example.com/blog) receives
+        // "blog/sitemap.xml". Match the part after the install path, or every
+        // sitemap address 404s there.
+        $home_path = trim( (string) wp_parse_url( home_url(), PHP_URL_PATH ), '/' );
+        if ( '' !== $home_path && 0 === strpos( $request_uri, $home_path . '/' ) ) {
+            $request_uri = substr( $request_uri, strlen( $home_path ) + 1 );
+        }
 
         $renderers = array(
             'sitemap.xml'            => 'render_index',
             'sitemap_index.xml'      => 'render_index',
+            // WordPress's own sitemap address. Core sitemaps are switched off
+            // while MSH SEO serves one, so answer here too: links and search
+            // console submissions made before the plugin was installed keep
+            // working, as does any host that sends sitemap.xml to it.
+            'wp-sitemap.xml'         => 'render_index',
             'sitemap-posts.xml'      => 'render_posts',
             'sitemap-pages.xml'      => 'render_pages',
             'sitemap-categories.xml' => 'render_categories',

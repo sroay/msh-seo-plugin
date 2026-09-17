@@ -4,7 +4,7 @@ Tags: seo, schema markup, sitemap, redirects, indexnow
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.2
+Stable tag: 1.5.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -174,6 +174,11 @@ Terms of Service: https://marketingsohigh.com/terms
 Privacy Policy: https://marketingsohigh.com/privacy
 
 == Changelog ==
+
+= 1.5.3 =
+* Fixed: on a site installed in a subfolder (example.com/blog), /blog/sitemap.xml returned a 404. Sitemap addresses are now matched relative to where WordPress is installed.
+* Fixed: the sitemap is also served at /wp-sitemap.xml, WordPress's own sitemap address, so links and search console submissions made before installing the plugin keep working.
+* Fixed: WordPress's core sitemap was switched off even when another SEO plugin was active and MSH SEO was not serving a sitemap.
 
 = 1.5.2 =
 * Added: the daily health report now says whether search engines can read the site's IndexNow key file. On sites whose front end does not serve WordPress's files, submissions were being ignored without any warning.
