@@ -1,0 +1,110 @@
+== Changelog ==
+
+Older releases of MSH SEO. The current releases are listed in readme.txt.
+
+= 1.3.0 =
+* Improved: the schema now says who you are. Your brand's profile links (LinkedIn, X, GitHub and the like) are printed as sameAs on the Organization, on every article's publisher and, when MSH knows the founder, on the author with a job title and profile links. Answer engines use exactly these signals to decide who is speaking. Links arrive from the MSH dashboard and never overwrite a list you typed into the settings screen yourself.
+* Fixed: an SEO title set by MSH was still getting " – Site Name" appended, which pushed every one past the length Google shows. A SEO title now stands on its own.
+
+= 1.2.0 =
+* New: one-click Google Analytics. When your site is connected to MSH and your Google account is linked there, MSH reads the GA4 property's measurement id and places the standard Google tag on the site for you — then checks the live page to confirm it is really there. Until now MSH could map a property to a site but nothing put the tag on the page, so a property could sit "connected" for months without recording a single visit. The id arrives by direct push, with the hourly connection check, or with the daily check-in, so a reinstall or an offline moment cannot lose it. The tag is not added to a site that already carries a Google tag of its own.
+
+= 1.1.3 =
+* Improved: the broken-link report now shows when each link was last followed, not just how many times it has ever been followed. A page that was hit heavily last month and not once since used to look exactly like one being hit today, which pushed problems you had already fixed to the top of the list.
+
+= 1.1.2 =
+* Fixed: the broken-link report was counting the plugin's own daily check as visitor traffic. Each night it re-tests your dead URLs to see whether any have come back, and every one of those tests was being recorded as somebody hitting the page. Because the report is ordered by hit count, and the pages it re-tests are taken from the top of that order, a handful of URLs climbed the list on their own and stayed there. Those counts now reflect real visitors only.
+
+= 1.1.1 =
+* Improved: the broken-link report now says where each broken link was clicked from and whether it was a person or a bot. That is the difference between "someone linked to this from your own menu" and "a scanner is probing for a page you never had" — the first is worth fixing, the second is worth ignoring, and until now they looked identical.
+* Privacy: referrers are trimmed to the page address only, with any query string dropped before it leaves your server, and browsers are recorded by family (Chrome, Safari) rather than the full identifying string.
+
+= 1.1.0 =
+* New: MSH SEO now detects Yoast SEO, Rank Math, All in One SEO, SEOPress, The SEO Framework and Slim SEO, and automatically stops writing meta tags, schema and sitemaps when one of them is active. No more duplicate tags. On WooCommerce stores it also stops emitting its own Product schema, since two competing product schemas can cost a shop its price and rating snippets in search. Redirects, broken-link repair, health checks and the AI tools keep working alongside them.
+* New: checks in Tools > Site Health for the connection, the redirect engine and plugin conflicts, plus an MSH SEO section in the Info tab with everything needed to diagnose a problem.
+* New: the plugin now reports its own health to Marketing So High once a day, and checks what it reports rather than assuming it. It verifies the redirect table by asking the database, and fetches your sitemap and llms.txt to confirm they really answer.
+* New: broken links repair themselves. Dead URLs that clearly point at one of your published posts get a permanent redirect automatically. Every rule it writes is tagged, so they can all be undone as a set, and a rule you wrote by hand is never touched or overwritten.
+* New: checks that pages you have published can actually be opened by a visitor. A page can be live in WordPress and still return "not found" to the public after a theme, permalink or hosting change, and nothing else notices.
+* Fixed: redirects now work on installs in a subfolder (example.com/blog). A rule written as /my-page could never match a request for /blog/my-page, so those rules never fired.
+* Fixed: redirects are now applied before WordPress guesses a destination for an unknown URL. Your explicit rule previously lost to that guess, which also cost every visitor an extra hop.
+* Fixed: the redirect and 404 tables now repair themselves whenever the plugin updates, not only when it is reactivated.
+
+= 1.0.5 =
+* New: 'Your Growth' section on the Analytics page — real Google Search traffic over time (impressions + clicks with 28-day trend), the keywords now ranking for you (with position), and how much content the engine has published. The clearest view yet of how MSH is growing your site.
+
+= 1.0.4 =
+* Fixed: the "Smart CTA" toggle always displayed as unchecked and wouldn't stay checked after saving. Its checkbox now reflects the true saved state (the CTA itself was active by default the whole time; only the toggle's display was wrong). Verified live.
+
+= 1.0.3 =
+* Fixed: on headless installs (public site on a different domain than WordPress) every editor AI panel — SEO score, keyword data, meta generation, Internal Link Mesh — failed with "Could not get a valid response from the server". The editor's REST calls were sent to the public front-end domain instead of the WordPress host; they now always target the WordPress host. Found and verified live on a headless production site.
+
+= 1.0.2 =
+* Fixed: saving any setting no longer silently erases a stored Google service-account key (leave the field blank to keep it; type CLEAR to remove it).
+* Fixed: publishing is no longer slowed by indexing — IndexNow and Google pings now run out-of-band after publish instead of inside the save request.
+* Fixed: the connection check never runs during visitor page loads (admin-only, with a stampede lock) — the Smart CTA uses its own cached config.
+* Fixed: Internal Link Mesh no longer wraps a phrase that already sits inside another link (no more nested links).
+* Fixed: Speakable schema now activates for the [msh_seo_answer] shortcode and block (previously only raw markup).
+* Fixed: the article "about"/"keywords" schema values no longer contain HTML entities (e.g. & rendered correctly for AI engines).
+
+= 1.0.1 =
+* Status chips now recognize central Google indexing: when the site is connected to MSH, Google pings run server-side on every publish — chips read "Google via MSH" instead of a misleading "off". The plugin's own service-account field is now clearly optional (self-hosted mode only).
+* Fixed: the MSH connection now self-heals — the plugin silently re-verifies when its hourly check expires, so connected features (Smart CTA, Link Mesh, AI analysis) no longer lapse between visits to the settings page.
+* Plugin updates trigger an immediate connection refresh, so new capabilities appear right after upgrading.
+
+= 1.0.0 =
+* New: Internal Link Mesh — the editor suggests ranked internal links from your whole site's topic-cluster graph (via the MSH brain) and inserts them with one click.
+* New: Smart CTAs — an intent-personalized call-to-action (auto-appended or the [msh_seo_cta] shortcode / block) that adapts its message to each visitor (search, returning, high-intent) and streams impression/click/conversion events back to MSH so your content engine learns what converts.
+* New: Answer Engine (AEO) upgrades — Speakable schema, an "about" entity + keywords on articles, Organization sameAs profiles, and a quotable "Quick answer" block ([msh_seo_answer]) built for AI Overviews / ChatGPT citations.
+* New: AI Visibility — see whether AI answers actually cite your site, and which competitors they cite instead.
+* New: Google Indexing API support (service-account JSON) + bulk re-submit of all URLs, alongside the existing IndexNow instant indexing.
+* Redesigned admin console: a modern, branded dashboard with feature status, AI-visibility, and indexing at a glance.
+* World-class Analytics command center: SEO score trend chart (daily history), AI-visibility donut with the competitors AI cites instead, Smart-CTA conversion funnel (seen → clicked → converted with CTR/CVR and intent split), indexing pulse with one-click re-submit, a run-now freshness scan button, and real measured statuses replacing static labels.
+
+= 0.9.3 =
+* One-click Google Search Console onboarding support
+* New: stores a Google site verification token and outputs the <meta name="google-site-verification"> tag in <head> (site-wide, independent of the meta module toggle)
+* New REST endpoint msh-seo/v1/site-verification (application-password authenticated) so the MSH dashboard can push/clear the token
+* The token also syncs automatically via the hourly MSH connection check
+
+= 0.6.0 =
+* Added Social Preview panel (Facebook/LinkedIn + Twitter/X mockups)
+* Added Schema Type selector per-post (14 types)
+* Added AI feature upsell modal for non-connected users
+* Enhanced dashboard widget with content freshness and full SEO dashboard link
+* Fixed IndexNow data display in analytics page
+* Fixed CSS enqueue for builds without stylesheet
+* Bumped version across all files
+
+= 0.5.0 =
+* Added WooCommerce SEO module (Product schema, GTIN, MPN, Brand)
+* Added content freshness scanner with weekly cron
+* Added AI Crawler management (llms.txt, robots.txt for AI bots)
+* Added Answer Engine Optimization (AEO) scoring
+* Added page type detection for marketing pages
+* Added SEO Analytics admin page with score distribution charts
+* Added Image SEO automation (auto-rename, auto-alt-text)
+* Added breadcrumbs with shortcode and JSON-LD
+
+= 0.4.0 =
+* Added IndexNow instant indexing
+* Added content distribution meta box
+* Added SEO data import from Yoast, Rank Math, AIOSEO
+* Added dashboard widget with marketing overview
+
+= 0.3.0 =
+* Added XML sitemap with search engine pinging
+* Added 301/302 redirect manager with 404 logging
+* Added noindex controls
+
+= 0.2.0 =
+* Added Gutenberg sidebar with React components
+* Added focus keyword panel with data lookup
+* Added connection status indicator
+
+= 0.1.0 =
+* Initial release
+* Local SEO scoring engine with 14 checks
+* Meta title and description editor
+* SERP preview
+* Open Graph and Twitter Card output
+* JSON-LD schema markup (Article, FAQ, HowTo)
