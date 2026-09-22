@@ -3,7 +3,7 @@
  * Plugin Name: MSH SEO
  * Plugin URI: https://github.com/sroay/msh-seo-plugin
  * Description: Free SEO tools for WordPress with AI-powered content optimization. Connects to Marketing So High for advanced AI features.
- * Version: 1.5.4
+ * Version: 1.5.5
  * Author: Techno Believe Solutions
  * Author URI: https://technobelieve.com
  * License: GPLv2 or later
@@ -17,9 +17,29 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'MSH_SEO_VERSION', '1.5.4' );
+define( 'MSH_SEO_VERSION', '1.5.5' );
 define( 'MSH_SEO_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MSH_SEO_URL', plugin_dir_url( __FILE__ ) );
+
+/**
+ * A link into the Marketing So High app, tagged with UTM parameters so a visit
+ * that came from the plugin can be told apart from any other. It tags only the
+ * link a person clicks; the plugin itself sends nothing anywhere.
+ *
+ * @param string $path     App path, e.g. '/seo'.
+ * @param string $campaign Where in the plugin the link sits, e.g. 'dashboard-widget'.
+ * @return string The URL, unescaped: escape it where it is printed.
+ */
+function msh_seo_app_url( $path, $campaign ) {
+    return add_query_arg(
+        array(
+            'utm_source'   => 'wp-plugin',
+            'utm_medium'   => 'plugin',
+            'utm_campaign' => sanitize_key( $campaign ),
+        ),
+        'https://app.marketingsohigh.com' . $path
+    );
+}
 
 // Load includes
 require_once MSH_SEO_DIR . 'includes/class-msh-upgrade.php';

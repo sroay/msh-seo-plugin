@@ -672,7 +672,7 @@ class MSH_SEO_Autopilot {
                     <?php printf(
                         /* translators: 1: opening anchor tag linking to the MSH dashboard, 2: closing anchor tag. */
                         esc_html__( 'Manage your autopilot queue and review pending refreshes at %1$syour MSH dashboard%2$s.', 'msh-seo' ),
-                        '<a href="https://app.marketingsohigh.com/seo/autopilot" target="_blank" rel="noopener">',
+                        '<a href="' . esc_url( msh_seo_app_url( '/seo/autopilot', 'autopilot' ) ) . '" target="_blank" rel="noopener">',
                         '</a>'
                     ); ?>
                 </p>

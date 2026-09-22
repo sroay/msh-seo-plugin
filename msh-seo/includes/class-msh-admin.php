@@ -434,7 +434,7 @@ class MSH_SEO_Admin {
                                 printf(
                                     /* translators: %s: link to settings page */
                                     esc_html__( 'Get your API key from %s', 'msh-seo' ),
-                                    '<a href="https://app.marketingsohigh.com/settings" target="_blank" rel="noopener">marketingsohigh.com/settings</a>'
+                                    '<a href="' . esc_url( msh_seo_app_url( '/settings', 'settings-api-key' ) ) . '" target="_blank" rel="noopener">marketingsohigh.com/settings</a>'
                                 );
                                 ?>
                             </p>

@@ -901,7 +901,7 @@ class MSH_SEO_Analytics {
                     <span class="dashicons dashicons-update" style="margin-top:3px;"></span> Refresh Data
                 </button>
                 <?php if ( $is_connected ) : ?>
-                    <a href="https://app.marketingsohigh.com/seo" target="_blank" class="button button-primary">Open Full Dashboard</a>
+                    <a href="<?php echo esc_url( msh_seo_app_url( '/seo', 'analytics-dashboard' ) ); ?>" target="_blank" rel="noopener" class="button button-primary">Open Full Dashboard</a>
                 <?php else : ?>
                     <a href="<?php echo esc_url( admin_url( 'admin.php?page=msh-seo' ) ); ?>" class="button button-primary">Connect to MSH</a>
                 <?php endif; ?>
@@ -1050,7 +1050,7 @@ class MSH_SEO_Analytics {
                         <?php if ( ! empty( $ai_vis['opportunities'] ) ) : ?>
                             <?php echo esc_html( count( $ai_vis['opportunities'] ) ); ?> un-won queries to target &middot;
                         <?php endif; ?>
-                        <a href="https://app.marketingsohigh.com/seo" target="_blank" rel="noopener">Full report &rarr;</a>
+                        <a href="<?php echo esc_url( msh_seo_app_url( '/seo', 'analytics-ai-visibility' ) ); ?>" target="_blank" rel="noopener">Full report &rarr;</a>
                     </p>
                     <?php else : ?>
                         <p class="msh-muted">No AI-citation data yet. MSH runs your top keywords through live Google AI every week and records who gets cited &mdash; check back after Sunday's scan.</p>

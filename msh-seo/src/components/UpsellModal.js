@@ -51,8 +51,9 @@ export default function UpsellModal( { isOpen, onClose } ) {
                 <div style={ { display: 'flex', gap: '8px' } }>
                     <Button
                         variant="primary"
-                        href="https://app.marketingsohigh.com/settings?tab=wordpress_plugin"
+                        href="https://app.marketingsohigh.com/settings?tab=wordpress_plugin&utm_source=wp-plugin&utm_medium=plugin&utm_campaign=upsell-modal"
                         target="_blank"
+                        rel="noopener noreferrer"
                         style={ { flex: 1, justifyContent: 'center' } }
                     >
                         Create Free Account →

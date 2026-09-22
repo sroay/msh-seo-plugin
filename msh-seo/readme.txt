@@ -4,7 +4,7 @@ Tags: seo, schema, xml sitemap, redirects, meta description
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.4
+Stable tag: 1.5.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -63,6 +63,11 @@ These features send data to Marketing So High and only work once you enter an AP
 * Smart call-to-action blocks, with conversion tracking
 * Sending a post to the social channels connected in your MSH account
 * Publishing articles written in the MSH dashboard straight to WordPress, and refreshing older posts from it (Autopilot)
+
+= Free tools, no plugin needed =
+
+* [AI Visibility Check](https://marketingsohigh.com/tools/ai-visibility?utm_source=wordpress.org&utm_medium=readme&utm_campaign=msh-seo): see whether Google's AI quotes your site for the searches that matter to you, and which sites it quotes instead.
+* [llms.txt generator](https://marketingsohigh.com/tools/llms-txt?utm_source=wordpress.org&utm_medium=readme&utm_campaign=msh-seo): build an llms.txt for any website from its sitemap. This plugin serves one for you automatically.
 
 = Source code and build tools =
 
@@ -174,6 +179,11 @@ Terms of Service: https://marketingsohigh.com/terms
 Privacy Policy: https://marketingsohigh.com/privacy
 
 == Changelog ==
+
+= 1.5.5 =
+* Changed: links from the plugin to the Marketing So High dashboard carry UTM tags (utm_source=wp-plugin), so visits that came from the plugin can be counted. Only the link you click is tagged; the plugin sends no data.
+* Improved: links that open in a new tab use rel="noopener".
+* Readme: links to two free tools, the AI Visibility Check and the llms.txt generator.
 
 = 1.5.4 =
 * Security: automatic image renaming on upload now uses the post only when the upload carries WordPress's upload nonce and you can edit that post.

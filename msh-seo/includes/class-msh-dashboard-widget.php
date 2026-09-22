@@ -249,7 +249,7 @@ class MSH_SEO_Dashboard_Widget {
             <a href="<?php echo esc_url( admin_url( 'admin.php?page=msh-seo-analytics' ) ); ?>" class="button button-primary button-small">
                 Open Command Center
             </a>
-            <a href="https://app.marketingsohigh.com/seo" target="_blank" class="button button-small">
+            <a href="<?php echo esc_url( msh_seo_app_url( '/seo', 'dashboard-widget' ) ); ?>" target="_blank" rel="noopener" class="button button-small">
                 Full Dashboard
             </a>
         </div>
