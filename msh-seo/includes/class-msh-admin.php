@@ -502,7 +502,11 @@ class MSH_SEO_Admin {
         <div class="wrap msh-settings-wrap">
             <div class="msh-hero">
                 <div class="msh-hero__brand">
-                    <span class="msh-hero__logo">MH</span>
+                    <span class="msh-hero__logo" aria-hidden="true">
+                        <svg viewBox="3 7 31 36" width="22" height="26" fill="none" stroke="currentColor" stroke-width="4.2" stroke-linejoin="bevel" focusable="false">
+                            <path d="M6 40 V10 L18.5 40 L31 10 V40"/>
+                        </svg>
+                    </span>
                     <div>
                         <h1 class="msh-hero__title"><?php esc_html_e( 'MSH SEO', 'msh-seo' ); ?></h1>
                         <p class="msh-hero__tagline"><?php esc_html_e( 'The WordPress limb of your MSH marketing brain', 'msh-seo' ); ?></p>

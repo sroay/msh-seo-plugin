@@ -159,16 +159,16 @@
 .msh-hero {
     display: flex; align-items: center; justify-content: space-between;
     gap: 16px; margin: 16px 0 20px; padding: 22px 26px;
-    background: linear-gradient(135deg, #ff5c8a, #ff9a3c);
-    border-radius: 16px; color: #fff;
+    background: #1a1a17;
+    border-radius: 14px; color: #f4f4f1;
 }
 .msh-hero__brand { display: flex; align-items: center; gap: 16px; }
 .msh-hero__logo {
     width: 48px; height: 48px; border-radius: 12px;
-    background: rgba(255,255,255,.2); display: flex; align-items: center;
-    justify-content: center; font-weight: 800; font-size: 20px; letter-spacing: .5px;
+    background: rgba(244,244,241,.10); display: flex; align-items: center;
+    justify-content: center; color: #f4f4f1;
 }
-.msh-hero__title { margin: 0; color: #fff; font-size: 24px; line-height: 1.1; }
+.msh-hero__title { margin: 0; color: #f4f4f1; font-size: 24px; line-height: 1.1; letter-spacing: -0.01em; }
 .msh-hero__tagline { margin: 2px 0 0; opacity: .92; font-size: 13px; }
 .msh-hero__version {
     background: rgba(255,255,255,.22); padding: 4px 12px; border-radius: 9999px;
