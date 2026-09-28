@@ -4,7 +4,7 @@ Tags: seo, schema, xml sitemap, redirects, meta description
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.5
+Stable tag: 1.5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -179,6 +179,9 @@ Terms of Service: https://marketingsohigh.com/terms
 Privacy Policy: https://marketingsohigh.com/privacy
 
 == Changelog ==
+
+= 1.5.6 =
+* Changed: the plugin's admin screens now carry the current Marketing So High identity. Appearance only — no change to what the plugin does, what it stores, or anything it outputs on your site.
 
 = 1.5.5 =
 * Changed: links from the plugin to the Marketing So High dashboard carry UTM tags (utm_source=wp-plugin), so visits that came from the plugin can be counted. Only the link you click is tagged; the plugin sends no data.
