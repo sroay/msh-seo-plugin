@@ -4,7 +4,7 @@ Tags: seo, schema, xml sitemap, redirects, meta description
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.6
+Stable tag: 1.5.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -180,6 +180,10 @@ Privacy Policy: https://marketingsohigh.com/privacy
 
 == Changelog ==
 
+= 1.5.7 =
+* Fixed: on a site that shows its latest posts on the front page, the blog listing (and every /page/N/) named its first post as its canonical address, so search engines treated the listing as a copy of one article. Each listing page now points to itself.
+* Changed: IndexNow announces a new post immediately, and an edit to an already-published post at most once a week, instead of on every save. The sitemap address is no longer sent with each submission; register sitemaps with search engines directly.
+
 = 1.5.6 =
 * Changed: the plugin's admin screens now carry the current Marketing So High identity. Appearance only — no change to what the plugin does, what it stores, or anything it outputs on your site.
 
@@ -226,6 +230,9 @@ Privacy Policy: https://marketingsohigh.com/privacy
 For releases before 1.3.0, see [changelog.txt](https://plugins.svn.wordpress.org/msh-seo/trunk/changelog.txt).
 
 == Upgrade Notice ==
+
+= 1.5.7 =
+Recommended if your latest posts are your front page: the blog listing told search engines it was a copy of its first post. Fixed.
 
 = 1.5.0 =
 Renames the plugin's stored data to the msh_seo prefix. The move happens automatically on the first page load after updating; no action is needed.

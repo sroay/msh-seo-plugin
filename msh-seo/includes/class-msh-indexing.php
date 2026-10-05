@@ -398,21 +398,25 @@ class MSH_SEO_Indexing {
             return;
         }
 
-        // Prevent duplicate submissions during the same request.
+        // A NEW publication is announced at once. An edit to a post that is
+        // already live is announced at most once a week per URL. Every save of a
+        // published post used to ping (with only a 60-second guard), so
+        // automated nightly edits — internal-link passes, refreshes — re-sent
+        // the same URLs night after night. Bing has said flooding the same URL
+        // "can cause search engines to mistrust your content".
+        $is_new   = ( 'publish' !== $old_status );
+        $cooldown = $is_new ? 60 : WEEK_IN_SECONDS;
         $already_submitted = get_transient( 'msh_seo_indexnow_submitted_' . $post->ID );
         if ( $already_submitted ) {
             return;
         }
-
-        // Mark as submitted for this request (60 second cooldown).
-        set_transient( 'msh_seo_indexnow_submitted_' . $post->ID, 1, 60 );
+        set_transient( 'msh_seo_indexnow_submitted_' . $post->ID, 1, $cooldown );
 
         $permalink = get_permalink( $post->ID );
-        $urls      = array( $permalink );
-
-        // Also submit the sitemap URL if available.
-        $sitemap_url = home_url( '/sitemap.xml' );
-        $urls[]      = $sitemap_url;
+        // The page only. sitemap.xml used to ride along on EVERY submission —
+        // one URL sent dozens of times a day. Sitemaps are registered with
+        // search engines directly; IndexNow is for pages that changed.
+        $urls = array( $permalink );
 
         // DEFER the actual HTTP submissions (IndexNow + optional Google ping):
         // this hook runs inside the editor's publish request, and blocking
