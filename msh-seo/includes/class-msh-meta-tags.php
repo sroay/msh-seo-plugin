@@ -135,7 +135,7 @@ class MSH_SEO_Meta_Tags {
 
         $site_name   = get_bloginfo( 'name' );
         $description = get_bloginfo( 'description' );
-        $blog_url    = get_permalink( get_option( 'page_for_posts' ) );
+        $blog_url    = self::blog_index_url();
 
         // If a static page is set as the posts page, use its meta
         $posts_page_id = (int) get_option( 'page_for_posts' );
@@ -145,11 +145,6 @@ class MSH_SEO_Meta_Tags {
             if ( ! empty( $page_desc ) && ! self::is_garbled( $page_desc ) ) {
                 $description = $page_desc;
             }
-            $blog_url = get_permalink( $posts_page_id );
-        }
-
-        if ( empty( $blog_url ) ) {
-            $blog_url = home_url( '/' );
         }
 
         if ( empty( $description ) ) {
@@ -380,6 +375,35 @@ class MSH_SEO_Meta_Tags {
             $desc .= '...';
         }
         return $desc;
+    }
+
+    /**
+     * The address of the blog listing page the visitor is on.
+     *
+     * Was `get_permalink( get_option( 'page_for_posts' ) )`. When the latest
+     * posts ARE the front page, page_for_posts is 0, and get_permalink(0)
+     * falls back to the global $post — the first post in the listing. So the
+     * blog index told search engines it was a duplicate of its first article
+     * (marketingsohigh.com/blog/ → /blog/gtm-google-tag-manager-guide/,
+     * blog.kompense.com/ → /automated-price-monitoring-competitors/, and every
+     * /page/N/ → that page's first post), and they dropped the one page that
+     * links to every post. Seen live 2026-10-05.
+     *
+     * Page 2 and beyond point at themselves: each lists different posts, so
+     * none is a copy of page 1.
+     *
+     * @return string
+     */
+    private static function blog_index_url() {
+        $paged = max( 1, (int) get_query_var( 'paged' ) );
+        if ( $paged > 1 ) {
+            // get_pagenum_link keeps the visit's query string (?utm_source=…);
+            // a canonical carries none of it.
+            return strtok( get_pagenum_link( $paged, false ), '?' );
+        }
+        $posts_page_id = (int) get_option( 'page_for_posts' );
+        $url           = $posts_page_id ? get_permalink( $posts_page_id ) : '';
+        return $url ? $url : home_url( '/' );
     }
 
     /**
